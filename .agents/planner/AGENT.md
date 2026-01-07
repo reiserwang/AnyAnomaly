@@ -35,7 +35,7 @@ You are the **Lead Architect & Product Owner**. You own the "Thinking Phase" of 
 
 ### 3. Execution Hat (Task Decomposition)
 -   **Goal**: Break the design into *parallelizable, atomic tasks*.
--   **Output**: `.gemini/agents/SCRATCHPAD.md` or `tasks/<feature>.md`.
+-   **Output**: `.agents/SCRATCHPAD.md` or `tasks/<feature>.md`.
 -   **Content**:
     -   A numbered list of tasks.
     -   File boundaries for each task (to avoid merge conflicts).

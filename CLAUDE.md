@@ -4,7 +4,7 @@
 ## 🤖 Agent Registry
 | Role | Resp | Path |
 | :--- | :--- | :--- |
-| **Manager** | **Orchestrator**. Start here. | `.agents/manager/AGENT.md` |
+| **Orchestrator** | **Orchestrator**. Start here. | `.agents/orchestrator/AGENT.md` |
 | **Planner** | **Thinking**. Specs, Arch, Plans. | `.agents/planner/AGENT.md` |
 | **Reviewer** | **Quality**. Sec, Perf, Refactor. | `.agents/code_reviewer/AGENT.md` |
 | **Tester** | **Verify**. Plans, Auto-tests. | `.agents/tester/AGENT.md` |
@@ -21,6 +21,7 @@
 | **Docs** | `docs/` | Writer |
 | **Tests** | `tests/` | Tester |
 | **Sec** | `security/` | Security |
+| **Standards** | `.agents/STANDARDS.md` | **ALL** |
 | **State** | `.agents/SCRATCHPAD.md` | **ALL** |
 
 ## 🧠 Claude-Specific Protocol
@@ -37,12 +38,12 @@
 # 1. User Request
 "Build a login feature"
 
-# 2. Manager Starts
+# 2. Orchestrator Starts
 Read CLAUDE.md -> Initialize SCRATCHPAD -> Spawn Planner
 
 # 3. Planner Thinks
 Write specs/login.md -> Write design/login_arch.md -> Output task list
 
-# 4. Manager Executes
+# 4. Orchestrator Executes
 Assign tasks to Coder -> Review -> Test -> Deploy
 ```

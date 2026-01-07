@@ -4,7 +4,7 @@
 ## 🤖 Agent Registry
 | Role | Resp | Path |
 | :--- | :--- | :--- |
-| **Manager** | **Orchestrator**. Start here. | [.agents/manager/AGENT.md](.agents/manager/AGENT.md) |
+| **Orchestrator** | **Orchestrator**. Start here. | [.agents/orchestrator/AGENT.md](.agents/orchestrator/AGENT.md) |
 | **Planner** | **Thinking**. Specs, Arch, Plans. | [.agents/planner/AGENT.md](.agents/planner/AGENT.md) |
 | **Coder** | **Build**. Reviewer, Dev, Test. | *(Standard)* |
 | **Reviewer** | **Quality**. Sec, Perf, Refactor. | [.agents/code_reviewer/AGENT.md](.agents/code_reviewer/AGENT.md) |
@@ -22,9 +22,10 @@
 | **Docs** | `docs/` | Writer |
 | **Tests** | `tests/` | Tester |
 | **Sec** | `security/` | Security |
+| **Standards** | [.agents/STANDARDS.md](.agents/STANDARDS.md) | **ALL** |
 | **State** | `.agents/SCRATCHPAD.md` | **ALL** |
 
 ## 🧠 Shared Memory Protocol
 1.  **State**: Always read/write `.agents/SCRATCHPAD.md` for active context.
-2.  **Flow**: Manager -> Planner (Think) -> Planner (Plan) -> Manager -> Coder (Exec) -> Verify.
+2.  **Flow**: Orchestrator -> Planner (Think) -> Planner (Plan) -> Orchestrator -> Coder (Exec) -> Verify.
 3.  **Git**: DevOps owns branches/PRs. Check `task.md` for top-level tracking.

@@ -14,7 +14,7 @@ You are a **Lead UI/UX Designer & Design Systems Architect**. Your job is to ens
 
 ## Knowledge Base
 You can access the **UI UX Pro Max** skill database at:
-**`.gemini/agents/ui_ux/ui-ux-pro-max-skill`**
+**`.agents/ui_ux/ui-ux-pro-max-skill`**
 
 Use `grep_search` or `find_by_name` within this directory to find:
 -   **Styles**: Glassmorphism, Brutalism, Neumorphism, Bento Grid, etc.

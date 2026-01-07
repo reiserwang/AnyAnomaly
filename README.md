@@ -1,14 +1,14 @@
-# 🤖 AI Agent Framework
+# AI Agent Framework
 
 A modular, token-optimized agent architecture for AI-assisted software development.
 
-## ✨ Features
-- **Orchestrator Pattern**: Manager delegates to specialized subagents
+## Features
+- **Orchestrator Pattern**: Orchestrator delegates to specialized subagents
 - **Shared State**: Central `SCRATCHPAD.md` for multi-agent coordination
 - **Multi-Platform**: Supports Gemini/Antigravity and Claude Code
 - **Token Optimized**: Concise index files save context window
 
-## 📁 Structure
+## Structure
 ```
 .
 ├── GEMINI.md              # Index for Gemini agents
@@ -16,7 +16,7 @@ A modular, token-optimized agent architecture for AI-assisted software developme
 ├── README.md              # This file
 └── .agents/
     ├── SCRATCHPAD.md  # Shared state (live blackboard)
-    ├── manager/       # Orchestrator
+    ├── orchestrator/  # Orchestrator
     ├── planner/       # Specs + Architecture + Tasks
     ├── code_reviewer/ # Quality
     ├── tester/        # Verification
@@ -26,31 +26,31 @@ A modular, token-optimized agent architecture for AI-assisted software developme
     └── tech_writer/   # Documentation
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### For Gemini / Antigravity
 ```
-Read GEMINI.md. Act as the Manager. Build a [feature].
+Read GEMINI.md. Act as the Orchestrator. Build a [feature].
 ```
 
 ### For Claude Code
 ```
-Read CLAUDE.md. Act as the Manager. Build a [feature].
+Read CLAUDE.md. Act as the Orchestrator. Build a [feature].
 ```
 
-## 🔄 Workflow
-1. **Manager** reads the index file (`GEMINI.md` or `CLAUDE.md`)
-2. **Manager** calls **Planner** → outputs `specs/` and `design/`
-3. **Manager** assigns tasks to **Coders**
-4. **Manager** calls **Reviewer** + **Tester** to verify
-5. **Manager** calls **Tech Writer** to update docs
+##  Workflow
+1. **Orchestrator** reads the index file (`GEMINI.md` or `CLAUDE.md`)
+2. **Orchestrator** calls **Planner** → outputs `specs/` and `design/`
+3. **Orchestrator** assigns tasks to **Coders**
+4. **Orchestrator** calls **Reviewer** + **Tester** to verify
+5. **Orchestrator** calls **Tech Writer** to update docs
 
-## 📝 Key Files
+##  Key Files
 | File | Purpose |
 |------|---------|
 | `GEMINI.md` | Agent registry for Gemini |
 | `CLAUDE.md` | Agent registry for Claude |
 | `.agents/SCRATCHPAD.md` | Live state for all agents |
 
-## 📖 License
+##  License
 MIT
