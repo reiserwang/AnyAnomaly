@@ -15,7 +15,7 @@ A modular, token-optimized agent architecture for AI-assisted software developme
 ├── GEMINI.md              # Index for Gemini agents
 ├── CLAUDE.md              # Index for Claude Code agents
 ├── README.md              # This file
-└── agents/
+└── .agents/
     ├── SCRATCHPAD.md      # Shared state (live blackboard)
     ├── STANDARDS.md       # Coding standards for all agents
     ├── workflows/         # Reusable agent workflows
@@ -67,8 +67,8 @@ For overnight/unattended sessions:
 |------|---------|
 | `GEMINI.md` | Agent registry for Gemini |
 | `CLAUDE.md` | Agent registry for Claude |
-| `agents/SCRATCHPAD.md` | Live state + iteration tracking |
-| `agents/workflows/iteration-loop.md` | Autonomous loop workflow |
+| `.agents/SCRATCHPAD.md` | Live state + iteration tracking |
+| `.agents/workflows/iteration-loop.md` | Autonomous loop workflow |
 
 ## License
 MIT

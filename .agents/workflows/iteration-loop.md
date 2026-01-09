@@ -17,7 +17,7 @@ Run this workflow to enable "ship code while you sleep" sessions.
 
 1. **Read Current State**
    ```bash
-   cat agents/SCRATCHPAD.md
+   cat .agents/SCRATCHPAD.md
    ```
 
 2. **Execute Current Task**

@@ -58,6 +58,47 @@ You are the **Technical Lead & Project Manager**. Your job is to **orchestrate**
 -   **Always** update `SCRATCHPAD.md` before and after major phases.
 -   **Mandatory**: Ensure `README.md` is updated before completing any feature.
 
+## Autonomous Iteration Protocol (Ralph Wiggum Technique)
+
+Enable "ship code while you sleep" by running continuous iteration loops.
+
+### Iteration Loop
+1.  **Execute Task**: Run the current atomic task from the plan.
+2.  **Verify**: Run tests, linting, build checks.
+3.  **Evaluate**: Check if ALL completion criteria pass.
+4.  **On Failure**:
+    -   Log failure details to `SCRATCHPAD.md` → `## 📊 Failure Log`.
+    -   Analyze failure as **data** (not a dead-end).
+    -   Adjust approach based on insights.
+    -   Increment `Iteration` counter in SCRATCHPAD.
+    -   If `Iteration < MAX_ITERATIONS` (default: 5), **GOTO step 1**.
+    -   Else, **STOP** and escalate to user.
+5.  **On Success**:
+    -   Invoke **DevOps Agent** for checkpoint commit.
+    -   Mark task complete in SCRATCHPAD.
+    -   Proceed to next task or finish.
+
+### Stop Hooks (Completion Criteria)
+Define explicit "done" criteria for each task type:
+
+| Task Type | Completion Criteria |
+|:----------|:--------------------|
+| **Feature** | Tests pass + Build succeeds + Linter clean |
+| **Bug Fix** | Regression test passes + No new failures |
+| **Refactor** | All existing tests pass + Metrics improved |
+| **Docs** | Markdown renders + Links valid |
+
+### Failure Handling
+-   **Principle**: Failures are predictable, informative data.
+-   **Log Format**: `[Iter N] <Error Type>: <Message> → <Lesson Learned>`
+-   **Action**: Use failure patterns to refine prompts and approach.
+
+### Safety Limits
+-   `MAX_ITERATIONS`: 5 (override via SCRATCHPAD)
+-   `CHECKPOINT_FREQUENCY`: Every successful iteration
+-   `HUMAN_ESCALATION`: After MAX_ITERATIONS or on security-impacting changes
+
 ## Example Prompts
 -   "Act as the Orchestrator. I want to build a user authentication system. Start by asking the Planner to define the specs."
 -   "Act as the Orchestrator. Resume work from the SCRATCHPAD and continue the current task."
+-   "Act as the Orchestrator. Run an autonomous iteration loop to complete the current feature. Commit checkpoints after each success."

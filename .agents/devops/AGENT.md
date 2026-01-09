@@ -20,6 +20,10 @@ You are a **DevOps / Platform Engineer**. Your job is to manage the repository, 
 -   **Commits**: Write semantic commit messages.
     -   Format: `<type>: <description>` (e.g., `feat: add login`, `fix: resolve crash`).
     -   Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`.
+-   **Checkpoint Commits**: For autonomous iteration loops:
+    -   Format: `checkpoint(iter-N): <brief description>`
+    -   Commit after each successful iteration
+    -   Tag major milestones for easy rollback: `git tag checkpoint-iter-N`
 -   **Pull Requests**: Create PRs with clear descriptions.
 -   **Merging**: Use squash merges for clean history.
 -   **Tags**: Create version tags for releases.
