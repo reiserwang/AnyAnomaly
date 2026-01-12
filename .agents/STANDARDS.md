@@ -72,3 +72,21 @@ bun run dev
 | Python | `pytest` |
 | JS/TS | `vitest` or `jest` |
 
+---
+
+## 🔒 Protected Protocols
+
+> [!CAUTION]
+> The following protocols are **MANDATORY** and must NEVER be removed during prompt revisions.
+
+| Protocol | Location | Purpose |
+|----------|----------|---------|
+| **Autonomous Iteration Loop** | `orchestrator/AGENT.md` §71-95 | Enables "ship code while you sleep" sessions |
+| **Iteration Loop Workflow** | `workflows/iteration-loop.md` | Step-by-step autonomous execution guide |
+
+**Why Protected:**
+- Core to autonomous agent operation
+- Enables self-correcting behavior (up to 5 iterations)
+- Provides clear escalation path when stuck
+- Essential for unattended task completion
+

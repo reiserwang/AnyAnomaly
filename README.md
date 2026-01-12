@@ -70,5 +70,19 @@ For overnight/unattended sessions:
 | `.agents/SCRATCHPAD.md` | Live state + iteration tracking |
 | `.agents/workflows/iteration-loop.md` | Autonomous loop workflow |
 
+## Security Hooks (Claude Code & Gemini CLI)
+
+Pre-execution hooks that block dangerous system commands for **both** Claude Code and Gemini CLI.
+
+| File | Purpose |
+|------|---------|
+| `.shared/blocked_commands.json` | Single source of truth for all blocking rules |
+| `.claude/settings.local.json` | Claude Code `PreToolUse` hook config |
+| `.gemini/settings.json` | Gemini CLI `BeforeTool` hook config |
+
+**Setup:** See [.claude/HOOK_SETUP.md](.claude/HOOK_SETUP.md)
+
+**Blocks:** `rm -rf /`, `sudo rm/chmod/dd`, `curl|bash`, `git push --force`, deleting `.env`/`.git/`, etc.
+
 ## License
 MIT
