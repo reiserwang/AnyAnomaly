@@ -1,0 +1,125 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Shared dangerous command blocklist for Claude Code and Gemini CLI hooks",
+    "version": "1.0.0",
+    "blocked_commands": [
+        {
+            "pattern": "rm\\s+(-[rf]+\\s+)*(/|~|\\.\\.|\\$HOME)",
+            "description": "rm -rf at dangerous paths (/, ~, .., $HOME)"
+        },
+        {
+            "pattern": "rm\\s+-rf\\s+\\*",
+            "description": "rm -rf * (delete all files)"
+        },
+        {
+            "pattern": "mkfs\\.",
+            "description": "Format filesystem"
+        },
+        {
+            "pattern": "dd\\s+if=",
+            "description": "Raw disk operations"
+        },
+        {
+            "pattern": ">\\s*/dev/sd",
+            "description": "Overwrite disk device"
+        },
+        {
+            "pattern": "\\bsudo\\s+rm\\b",
+            "description": "sudo rm (privileged deletion)"
+        },
+        {
+            "pattern": "\\bsudo\\s+chmod\\b",
+            "description": "sudo chmod (privileged permission change)"
+        },
+        {
+            "pattern": "\\bsudo\\s+chown\\b",
+            "description": "sudo chown (privileged ownership change)"
+        },
+        {
+            "pattern": "\\bsudo\\s+dd\\b",
+            "description": "sudo dd (privileged disk write)"
+        },
+        {
+            "pattern": ":(){ :|:& };:",
+            "description": "Fork bomb"
+        },
+        {
+            "pattern": "kill\\s+-9\\s+(-1|1\\b)",
+            "description": "kill -9 1 (kill init/all processes)"
+        },
+        {
+            "pattern": "pkill\\s+-9\\b",
+            "description": "Aggressive process killing"
+        },
+        {
+            "pattern": "killall\\s+-9\\b",
+            "description": "Kill all processes by name"
+        },
+        {
+            "pattern": "git\\s+push\\s+.*--force(?!-with-lease)",
+            "description": "Force push without lease protection"
+        },
+        {
+            "pattern": "git\\s+reset\\s+--hard\\s+origin",
+            "description": "Hard reset to remote (data loss)"
+        },
+        {
+            "pattern": "git\\s+clean\\s+-fd",
+            "description": "Clean untracked files forcefully"
+        },
+        {
+            "pattern": "chmod\\s+(-R\\s+)?777\\s+/",
+            "description": "chmod 777 at root"
+        },
+        {
+            "pattern": "chmod\\s+777\\s+\\.",
+            "description": "chmod 777 current directory"
+        },
+        {
+            "pattern": "curl\\s.*\\|\\s*(bash|sh|zsh)",
+            "description": "curl piped to shell (remote code execution)"
+        },
+        {
+            "pattern": "wget\\s.*\\|\\s*(bash|sh|zsh)",
+            "description": "wget piped to shell (remote code execution)"
+        },
+        {
+            "pattern": "curl\\s.*>\\s*/",
+            "description": "Download directly to root filesystem"
+        },
+        {
+            "pattern": "rm\\s+.*\\.env",
+            "description": "Delete .env files"
+        },
+        {
+            "pattern": "rm\\s+-rf\\s+.*\\.git",
+            "description": "Delete .git directory"
+        },
+        {
+            "pattern": "rm\\s+-rf\\s+.*node_modules",
+            "description": "Delete node_modules"
+        },
+        {
+            "pattern": "cat\\s+.*(/etc/passwd|/etc/shadow)",
+            "description": "Read system authentication files"
+        },
+        {
+            "pattern": ">\\s*/etc/",
+            "description": "Write to /etc directory"
+        }
+    ],
+    "dangerous_patterns": [
+        {
+            "pattern": "\\|\\s*tee\\s+/",
+            "description": "Write anywhere via tee"
+        },
+        {
+            "pattern": ">\\s*/System",
+            "description": "Write to macOS System folder"
+        },
+        {
+            "pattern": ">\\s*/Library",
+            "description": "Write to macOS Library folder"
+        }
+    ]
+}
