@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """
-Claude Code Hook: Dangerous Command Blocker
-============================================
+Shared Hook: Dangerous Command Blocker
+=======================================
 PreToolUse hook that blocks dangerous system commands before execution.
+Works with both Claude Code and Gemini CLI.
+
 Loads rules from shared blocklist at .shared/blocked_commands.json
 
 Exit codes:
 - 0: Command is safe to execute
-- 2: Command is blocked (dangerous) - stderr is shown to Claude
+- 2: Command is blocked (dangerous) - stderr is shown to the AI
+
+Claude Code: PreToolUse hook with tool_name "Bash"
+Gemini CLI: BeforeTool hook with tool_name "Shell", "run_command", etc.
 """
 
 import json
@@ -28,8 +33,8 @@ def get_project_root() -> Path:
         if (current / ".shared" / "blocked_commands.json").exists():
             return current
         current = current.parent
-    # Fallback to script's grandparent (assumes .claude/hooks/ structure)
-    return Path(__file__).resolve().parent.parent.parent
+    # Fallback to script's parent (assumes .shared/ structure)
+    return Path(__file__).resolve().parent.parent
 
 
 def load_shared_rules() -> Tuple[List[str], List[str]]:
@@ -91,12 +96,15 @@ def main():
 
     tool_name = input_data.get("tool_name", "")
     
-    # Only check Bash commands
-    if tool_name != "Bash":
+    # Check for shell/bash tool invocations
+    # Claude Code uses "Bash", Gemini CLI uses "Shell", "run_command", etc.
+    shell_tools = ["Bash", "Shell", "run_command", "shell", "bash"]
+    if tool_name not in shell_tools:
         sys.exit(0)
 
     tool_input = input_data.get("tool_input", {})
-    command = tool_input.get("command", "")
+    # Handle different input formats across tools
+    command = tool_input.get("command", "") or tool_input.get("cmd", "") or tool_input.get("CommandLine", "")
 
     if not command:
         sys.exit(0)
@@ -115,7 +123,7 @@ def main():
         print(f"   Command: {command[:100]}{'...' if len(command) > 100 else ''}", file=sys.stderr)
         print(f"   Reason: {reason}", file=sys.stderr)
         print(f"   To override, ask the user to run this command manually.", file=sys.stderr)
-        # Exit code 2 blocks the tool call and shows stderr to Claude
+        # Exit code 2 blocks the tool call
         sys.exit(2)
     
     # Command is safe

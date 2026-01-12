@@ -6,7 +6,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "python3 .gemini/hooks/dangerous_command_blocker.py"
+                        "command": "python3 .shared/dangerous_command_blocker.py"
                     }
                 ]
             },
@@ -15,7 +15,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "python3 .gemini/hooks/dangerous_command_blocker.py"
+                        "command": "python3 .shared/dangerous_command_blocker.py"
                     }
                 ]
             }

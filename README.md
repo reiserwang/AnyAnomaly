@@ -121,5 +121,47 @@ Pre-execution hooks that block dangerous system commands for **both** Claude Cod
 
 **Blocks:** `rm -rf /`, `sudo rm/chmod/dd`, `curl|bash`, `git push --force`, deleting `.env`/`.git/`, etc.
 
+## Shared Skills
+
+Both Gemini CLI and Claude Code share skills from `.shared/skills/` via symlinks.
+
+| Path | Points To |
+|------|-----------|
+| `.gemini/skills` | `.shared/skills/` |
+| `.claude/skills` | `.shared/skills/` |
+
+**Add a new skill:**
+```bash
+mkdir .shared/skills/my-skill
+# Create SKILL.md with YAML frontmatter (name, description) + instructions
+```
+
+**Verify skills are loaded:**
+```
+Ask: "What skills do you have?"
+```
+
+## Second Brain (Obsidian Vault)
+
+A PARA-method knowledge vault for project management at `obsidian-vault/`.
+
+```
+obsidian-vault/
+├── 00 - Inbox/      # Quick capture
+├── 10 - Daily/      # Daily notes (YYYY-MM-DD.md)
+├── 20 - Projects/   # Active project folders
+├── 30 - Areas/      # Ongoing responsibilities
+├── 40 - Resources/  # Reference material
+├── 50 - Archive/    # Completed work
+└── Templates/       # Daily, Project, Meeting templates
+```
+
+**Trigger the skill:**
+- "Log that we decided to use X"
+- "Update my notes with today's progress"
+- "Create a project note for [feature]"
+
+**Open in Obsidian:** File → Open Vault → Select `obsidian-vault/`
+
 ## License
 MIT

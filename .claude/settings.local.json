@@ -6,7 +6,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "python3 .claude/hooks/dangerous_command_blocker.py"
+                        "command": "python3 .shared/dangerous_command_blocker.py"
                     }
                 ]
             }
