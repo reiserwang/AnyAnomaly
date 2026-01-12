@@ -49,6 +49,43 @@ Read CLAUDE.md. Act as the Orchestrator. Build a [feature].
 ```
 
 ## Workflow
+
+```mermaid
+flowchart TD
+    subgraph Planning
+        A[📋 Orchestrator] --> B[🧠 Planner]
+        B --> C["specs/ + design/"]
+    end
+
+    subgraph Execution
+        A --> D[💻 Coder]
+        D --> E[📝 Code Changes]
+    end
+
+    subgraph Verification
+        E --> F[🔍 Reviewer]
+        E --> G[🧪 Tester]
+        F --> H{Pass?}
+        G --> H
+    end
+
+    subgraph Completion
+        H -->|Yes| I[📖 Tech Writer]
+        H -->|No| D
+        I --> J[✅ Done]
+    end
+
+    subgraph Autonomous Loop
+        K[Execute Task] --> L[Verify]
+        L -->|Fail| M[Log + Retry]
+        M --> K
+        L -->|Pass| N[Checkpoint Commit]
+        N --> O{More Tasks?}
+        O -->|Yes| K
+        O -->|No| J
+    end
+```
+
 1. **Orchestrator** reads the index file (`GEMINI.md` or `CLAUDE.md`)
 2. **Orchestrator** calls **Planner** → outputs `specs/` and `design/`
 3. **Orchestrator** assigns tasks to **Coders**
