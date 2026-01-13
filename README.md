@@ -121,47 +121,77 @@ Pre-execution hooks that block dangerous system commands for **both** Claude Cod
 
 **Blocks:** `rm -rf /`, `sudo rm/chmod/dd`, `curl|bash`, `git push --force`, deleting `.env`/`.git/`, etc.
 
-## Shared Skills
+## Shared Plugins & Skills
 
-Both Gemini CLI and Claude Code share skills from `.shared/skills/` via symlinks.
+Plugins and skills are shared between Claude Code and Gemini CLI via `.shared/`.
 
-| Path | Points To |
-|------|-----------|
-| `.gemini/skills` | `.shared/skills/` |
-| `.claude/skills` | `.shared/skills/` |
+### Plugins (Commands + Agents)
 
-**Add a new skill:**
+Plugins provide slash commands (`/command`) and specialized agents. Trigger with `/`:
+
+| Plugin | Command | Description |
+|--------|---------|-------------|
+| **ralph-wiggum** | `/ralph-loop` | Iterative development loops (Ralph Wiggum technique) |
+| **pr-review-toolkit** | `/review-pr` | Comprehensive PR review with 6 specialized agents |
+| **feature-dev** | `/feature-dev` | Guided feature development workflow |
+
+#### PR Review Toolkit Agents
+```
+/review-pr              # Full review
+/review-pr tests errors # Specific aspects
+```
+- `code-reviewer` - Project guidelines compliance
+- `code-simplifier` - Code clarity and maintainability
+- `comment-analyzer` - Comment accuracy
+- `pr-test-analyzer` - Test coverage quality
+- `silent-failure-hunter` - Hidden error detection
+- `type-design-analyzer` - Type encapsulation
+
+#### Feature Dev Agents
+```
+/feature-dev Build a REST API
+```
+- `code-architect` - Design architectures
+- `code-explorer` - Analyze existing code
+- `code-reviewer` - Quality review
+
+### Skills (Knowledge/Reference)
+
+Skills are passive knowledge bases referenced by agents or users:
+
+| Skill | Purpose |
+|-------|---------|
+| **frontend-design** | Distinctive UI/UX implementation guidelines |
+
+**Use a skill:**
+```
+"Build a dashboard using the frontend-design skill"
+```
+
+### Directory Structure
+```
+.shared/
+├── plugins/
+│   ├── ralph-wiggum/     # Iterative loops
+│   ├── pr-review-toolkit/ # PR review
+│   ├── feature-dev/      # Feature development
+│   └── frontend-design/  # (manifest only)
+└── skills/
+    └── frontend-design/  # UI/UX skill
+```
+
+**Add a plugin:**
+```bash
+mkdir -p .shared/plugins/my-plugin/commands
+# Create plugin.json manifest
+# Add command .md files with YAML frontmatter
+```
+
+**Add a skill:**
 ```bash
 mkdir .shared/skills/my-skill
-# Create SKILL.md with YAML frontmatter (name, description) + instructions
+# Create SKILL.md with frontmatter (name, description) + instructions
 ```
-
-**Verify skills are loaded:**
-```
-Ask: "What skills do you have?"
-```
-
-## Second Brain (Obsidian Vault)
-
-A PARA-method knowledge vault for project management at `obsidian-vault/`.
-
-```
-obsidian-vault/
-├── 00 - Inbox/      # Quick capture
-├── 10 - Daily/      # Daily notes (YYYY-MM-DD.md)
-├── 20 - Projects/   # Active project folders
-├── 30 - Areas/      # Ongoing responsibilities
-├── 40 - Resources/  # Reference material
-├── 50 - Archive/    # Completed work
-└── Templates/       # Daily, Project, Meeting templates
-```
-
-**Trigger the skill:**
-- "Log that we decided to use X"
-- "Update my notes with today's progress"
-- "Create a project note for [feature]"
-
-**Open in Obsidian:** File → Open Vault → Select `obsidian-vault/`
 
 ## License
 MIT

@@ -19,6 +19,16 @@
                     }
                 ]
             }
+        ],
+        "Stop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": ".shared/plugins/ralph-wiggum/hooks/stop-hook.sh"
+                    }
+                ]
+            }
         ]
     }
 }
