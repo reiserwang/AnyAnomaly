@@ -19,8 +19,8 @@ The system provides a visual timeline of events, Key Frame Selection (KFS), and 
 
 ```mermaid
 graph TD
-    User[User / Browser] -- HTTP/NDJSON --> Frontend[Frontend (React + Vite)]
-    Frontend -- API Requests (Port 5001) --> Backend[Backend (Flask)]
+    User[User / Browser] -- HTTP/NDJSON --> Frontend["Frontend (React + Vite)"]
+    Frontend -- API Requests (Port 5001) --> Backend["Backend (Flask)"]
     
     subgraph "Backend Core"
         Backend -- Analysis Request --> Model[MiniCPM-V VLM]
