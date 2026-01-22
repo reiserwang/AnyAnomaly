@@ -15,6 +15,25 @@ The system provides a visual timeline of events, Key Frame Selection (KFS), and 
 - **YouTube Support**: Analyze videos directly from YouTube URLs.
 - **Edge Optimized**: Configurable for running on consumer hardware (Mac M-series, consumer GPUs) via int4 quantization.
 
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    User[User / Browser] -- HTTP/NDJSON --> Frontend[Frontend (React + Vite)]
+    Frontend -- API Requests (Port 5001) --> Backend[Backend (Flask)]
+    
+    subgraph "Backend Core"
+        Backend -- Analysis Request --> Model[MiniCPM-V VLM]
+        Backend -- Frame Extraction --> KFS[Key Frame Selector]
+        KFS -- Ranked Frames --> Model
+    end
+    
+    subgraph "Storage"
+        Backend -- Uploads --> VideoFile[Video Files]
+        Backend -- Saves --> cache[Results Cache]
+    end
+```
+
 ## 🛠️ Tech Stack
 
 - **Backend**: Python, Flask, PyTorch, Transformers, CLIP, OpenCV.

@@ -1,0 +1,14 @@
+flask
+flask-cors
+h5py
+fastprogress
+scikit-learn
+openai-clip
+opencv-python
+Pillow
+torch
+torchvision
+transformers
+accelerate
+matplotlib
+yt-dlp

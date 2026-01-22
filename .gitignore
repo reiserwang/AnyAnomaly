@@ -1,0 +1,8 @@
+
+# Agent Configuration
+.agents/
+CLAUDE.md
+GEMINI.md
+backend/keyframes/
+uploads/
+*.log
