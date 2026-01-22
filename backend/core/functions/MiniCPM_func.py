@@ -2,6 +2,7 @@ import torch
 import os
 import sys
 import re
+import logging
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer
         
@@ -123,24 +124,39 @@ def parse_bbox(response_text):
     return None
 
 def load_lvlm(model_path, device):
-    if model_path == 'MiniCPM-V-2_6':
-        model = AutoModel.from_pretrained('openbmb/MiniCPM-V-2_6', trust_remote_code=True, attn_implementation='sdpa', torch_dtype=torch.bfloat16)
-    elif 'int4' in model_path:
-        # consistent with standard usage for quantized models
-        try:
-            model = AutoModel.from_pretrained(f'openbmb/{model_path}', trust_remote_code=True)
-        except Exception as e:
-            # Fallback if specific repo lookup fails or try local
-             model = AutoModel.from_pretrained(model_path, trust_remote_code=True)
+    # Determine precision and repo name
+    # Supported values: 'bf16', 'int4'
+    precision = os.environ.get('MODEL_PRECISION', 'bf16').lower()
+    
+    if precision == 'int4':
+        repo_name = 'openbmb/MiniCPM-V-2_6-int4'
+        dtype = torch.float16 # Compute dtype for INT4
+        logging.info("Configuration: Using INT4 quantized model.")
+    elif precision == 'bf16':
+        repo_name = 'openbmb/MiniCPM-V-2_6'
+        dtype = torch.bfloat16 if device.type == 'cuda' else torch.float32
+        logging.info(f"Configuration: Using BF16 model on {device.type}.")
     else:
-        model = AutoModel.from_pretrained(f'openbmb/{model_path}', trust_remote_code=True, torch_dtype=torch.float16)
+        # Fallback for other values
+        repo_name = 'openbmb/MiniCPM-V-2_6'
+        dtype = torch.float32
+        logging.info(f"Configuration: Precision '{precision}' not recognized. Falling back to FP32.")
+
+    logging.info(f"Loading model from {repo_name} with trust_remote_code=True on {device}")
     
-    tokenizer = AutoTokenizer.from_pretrained(f'openbmb/{model_path}', trust_remote_code=True)
+    # Load model
+    model = AutoModel.from_pretrained(
+        repo_name, 
+        trust_remote_code=True, 
+        attn_implementation='sdpa', 
+        torch_dtype=dtype,
+        device_map=device.type if device.type == 'cuda' else None # Better for CUDA
+    )
     
-    # Ensure model is on the correct device
-    # For int4, sometimes .to() is sufficient, sometimes device_map is needed during load.
-    # Here we assume the model loading itself didn't put it on device yet if we didn't use device_map.
-    if model.device.type != device.type:
+    tokenizer = AutoTokenizer.from_pretrained(repo_name, trust_remote_code=True)
+    
+    # Explicit .to(device) for non-device_map scenarios
+    if not hasattr(model, 'hf_device_map') or model.device.type != device.type:
         model = model.to(device=device)
         
     model = model.eval()

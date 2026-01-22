@@ -39,14 +39,24 @@ try:
     logging.info("Initializing C-VAD Detector (this may take a while)...")
     
     # Read optimization flags from environment
+    # Read optimization flags from environment
     quantize_model = os.environ.get('QUANTIZE_MODEL', 'false').lower() == 'true'
     frame_interval = int(os.environ.get('FRAME_INTERVAL', 1))
     frame_resize_dim = int(os.environ.get('FRAME_RESIZE_DIM', 240))
     
-    if quantize_model:
-        logging.info(f"Optimization Enabled: QUANTIZE_MODEL=True, FRAME_INTERVAL={frame_interval}, FRAME_RESIZE_DIM={frame_resize_dim}")
+    # Read device from environment
+    inference_device_str = os.environ.get('INFERENCE_DEVICE', 'auto').lower()
+    device = None
+    if inference_device_str != 'auto':
+        try:
+            device = torch.device(inference_device_str)
+        except Exception as e:
+            logging.warning(f"Invalid device '{inference_device_str}', falling back to auto-detection. Error: {e}")
+            device = None
+            
+    logging.info(f"Configuration: DEVICE={inference_device_str}, QUANTIZE={quantize_model}, FRAME_INTERVAL={frame_interval}")
     
-    detector = CVADDetector(quantize=quantize_model, frame_interval=frame_interval, frame_resize_dim=frame_resize_dim)
+    detector = CVADDetector(device=device, quantize=quantize_model, frame_interval=frame_interval, frame_resize_dim=frame_resize_dim)
     logging.info("C-VAD Detector Initialized.")
 except Exception as e:
     logging.error(f"Failed to initialize detector: {e}")

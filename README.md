@@ -85,17 +85,33 @@ npm install
 
 ## 🏃‍♂️ Usage
 
-### Start the Backend
+### Start the Backend (Windows)
+We recommend using the provided PowerShell script for reliable startup:
+
+```powershell
+# In the root directory
+.\start_backend.ps1
+```
+
+You can customize the startup behavior by editing the script or setting environment variables before running:
+
+```powershell
+$env:MODEL_PRECISION = "int4" # Switch to 4-bit quantized model
+.\start_backend.ps1
+```
+
+### Start the Backend (Linux/Mac)
 The backend runs on port `5001`.
 
 ```bash
 # In backend/ directory
 source .venv/bin/activate
-export HF_TOKEN="your_hugging_face_token"  # Required for first run to download models
+export HF_TOKEN="your_hugging_face_token"
+export MODEL_PRECISION="bf16" # or "int4"
 python app.py
 ```
 
-*The first run will download the MiniCPM-V model (~20GB or ~8GB if quantized). Ensure you have a stable internet connection.*
+*The first run will download the MiniCPM-V model (~15.5GB for BF16, ~8GB for INT4). Ensure you have a stable internet connection.*
 
 ### Start the Frontend
 The frontend runs on `http://localhost:5173`.
@@ -114,10 +130,17 @@ npm run dev
 
 ## 🔧 Configuration
 
-You can customize the backend behavior via environment variables or by modifying `config.py` (planned).
+You can customize the backend behavior via environment variables:
 
-- **`QUANTIZE_MODEL=true`**: (Upcoming) Force usage of 4-bit quantized model to save VRAM.
-- **`FRAME_INTERVAL=N`**: (Upcoming) Process every Nth frame to speed up analysis.
+- **`MODEL_PRECISION`**: Controls the model loading precision.
+    - `bf16` (Default): Uses full-precision (BFloat16) model. Requires ~16GB VRAM/RAM.
+    - `int4`: Uses 4-bit quantized model. Faster, requires ~8GB VRAM/RAM.
+- **`INFERENCE_DEVICE`**: Manually set the inference device.
+    - `auto` (Default): Automatically detects CUDA > MPS > CPU.
+    - `cuda`, `mps`, `cpu`: Force usage of a specific device.
+- **`HF_HOME`**: Directory to store Hugging Face model cache (e.g., `D:\huggingface`).
+- **`UV_CACHE_DIR`**: Directory for `uv` package cache.
+- **`FRAME_INTERVAL`**: (Upcoming) Process every Nth frame to speed up analysis.
 
 ## ⚠️ Troubleshooting
 
