@@ -129,11 +129,12 @@ class CVADDetector:
         frames = []
         count = 0
         while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            
+            # Optimization: Use grab() to skip frames without decoding
             if count % self.frame_interval == 0:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+
                 # Resize frame
                 if resize_dim:
                     new_dim = resize_dim
@@ -154,6 +155,9 @@ class CVADDetector:
                 # Convert BGR to RGB
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frames.append(Image.fromarray(frame))
+            else:
+                if not cap.grab():
+                    break
             count += 1
             
         cap.release()
