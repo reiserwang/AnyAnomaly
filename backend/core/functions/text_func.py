@@ -39,6 +39,14 @@ def make_text_embedding(model, device, text=None, type_list=None, class_adaption
 
     with torch.no_grad():
         if class_adaption:
+            if type_list is None:
+                if text is not None:
+                    type_list = [text]
+                else:
+                    raise ValueError("Both type_list and text cannot be None when class_adaption is True")
+            elif isinstance(type_list, str):
+                type_list = [type_list]
+
             text_feature_arr = []
             for type in type_list:
                 if template_adaption:

@@ -6,3 +6,4 @@ GEMINI.md
 backend/keyframes/
 uploads/
 *.log
+__pycache__/
