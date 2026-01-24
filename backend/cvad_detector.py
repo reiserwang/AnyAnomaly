@@ -6,6 +6,7 @@ import cv2
 import sys
 import os
 import logging
+import concurrent.futures
 
 # Imports from core (assumes sys.path is set in app.py)
 from functions.MiniCPM_func import load_lvlm, lvlm_test, make_instruction, make_bbox_instruction, parse_bbox
@@ -118,6 +119,16 @@ class CVADDetector:
         
         # Initialize KFS (Key Frame Selection)
         self.kfs = KFS(self.cfg.kfs_num, self.cfg.clip_length, self.clip_model, self.preprocess, self.device)
+
+        # Async executor for saving images
+        self.save_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+    def _log_save_error(self, future):
+        """Callback to log errors from async save operations."""
+        try:
+            future.result()
+        except Exception as e:
+            logging.error(f"Error saving keyframe: {e}")
 
     def process_video(self, video_path, resize_dim=None):
         """Extracts frames from video, respecting frame_interval."""
@@ -259,7 +270,8 @@ class CVADDetector:
                     # Save key image permanently for this request
                     # Since we don't have a path, we save the PIL image
                     dest_path = os.path.join(kf_dir, kf_filename)
-                    key_image.save(dest_path)
+                    future = self.save_executor.submit(key_image.save, dest_path)
+                    future.add_done_callback(self._log_save_error)
                     kf_path_for_ui = f"/keyframes/{request_id}/{kf_filename}"
                     
                     if score_tc > 0.6:
@@ -360,7 +372,8 @@ class CVADDetector:
                 if request_id:
                     kf_filename = f"summary_{chunk_idx}.jpg"
                     dest_path = os.path.join(kf_dir, kf_filename)
-                    key_image.save(dest_path)
+                    future = self.save_executor.submit(key_image.save, dest_path)
+                    future.add_done_callback(self._log_save_error)
 
                     storyline.append({
                         "chunk_index": chunk_idx,
