@@ -15,7 +15,7 @@ function AnalysisResult({ videoSrc, data, onReset }) {
     const currentScore = data.results ? data.results[currentIndex] : 0;
 
     // Find active bounding box (from closest storyline item within 1s window)
-    const activeStoryItem = data.storyline?.find(item => Math.abs(item.timestamp - currentTime) < 1.0);
+    const activeStoryItem = findActiveStoryItem(data.storyline, currentTime);
     const activeBox = activeStoryItem?.box; // [ymin, xmin, ymax, xmax] normalized
 
     // data.results is an array of scores (0-1) per chunk/frame.
@@ -165,6 +165,44 @@ function AnalysisResult({ videoSrc, data, onReset }) {
             }
         </div >
     );
+}
+
+function findActiveStoryItem(items, currentTime) {
+    if (!items || items.length === 0) return undefined;
+
+    // Binary search for the first item where timestamp > currentTime - 1.0
+    // We want the smallest index `i` such that `items[i].timestamp > currentTime - 1.0`
+
+    // Actually, `Math.abs(diff) < 1.0` is equivalent to `diff > -1.0` AND `diff < 1.0`
+    // item.timestamp - currentTime > -1.0  => item.timestamp > currentTime - 1.0
+    // item.timestamp - currentTime < 1.0   => item.timestamp < currentTime + 1.0
+
+    const target = currentTime - 1.0;
+    let low = 0;
+    let high = items.length - 1;
+    let resultIdx = -1;
+
+    // Standard lower_bound for value (currentTime - 1.0)
+    // We are looking for first element > (currentTime - 1.0)
+
+    while (low <= high) {
+        const mid = (low + high) >>> 1;
+        if (items[mid].timestamp > target) {
+            resultIdx = mid;
+            high = mid - 1; // Try to find a smaller index that still satisfies condition
+        } else {
+            low = mid + 1;
+        }
+    }
+
+    if (resultIdx !== -1) {
+        const item = items[resultIdx];
+        // Check upper bound
+        if (item.timestamp < currentTime + 1.0) {
+            return item;
+        }
+    }
+    return undefined;
 }
 
 export default AnalysisResult;
