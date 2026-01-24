@@ -6,6 +6,7 @@ import cv2
 import sys
 import os
 import logging
+import concurrent.futures
 
 # Imports from core (assumes sys.path is set in app.py)
 from functions.MiniCPM_func import load_lvlm, lvlm_test, make_instruction, make_bbox_instruction, parse_bbox
@@ -119,6 +120,16 @@ class CVADDetector:
         # Initialize KFS (Key Frame Selection)
         self.kfs = KFS(self.cfg.kfs_num, self.cfg.clip_length, self.clip_model, self.preprocess, self.device)
 
+        # Async executor for saving images
+        self.save_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+    def _log_save_error(self, future):
+        """Callback to log errors from async save operations."""
+        try:
+            future.result()
+        except Exception as e:
+            logging.error(f"Error saving keyframe: {e}")
+
     def process_video(self, video_path, resize_dim=None):
         """Extracts frames from video, respecting frame_interval."""
         cap = cv2.VideoCapture(video_path)
@@ -129,11 +140,12 @@ class CVADDetector:
         frames = []
         count = 0
         while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            
+            # Optimization: Use grab() to skip frames without decoding
             if count % self.frame_interval == 0:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+
                 # Resize frame
                 if resize_dim:
                     new_dim = resize_dim
@@ -154,6 +166,9 @@ class CVADDetector:
                 # Convert BGR to RGB
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frames.append(Image.fromarray(frame))
+            else:
+                if not cap.grab():
+                    break
             count += 1
             
         cap.release()
@@ -197,6 +212,12 @@ class CVADDetector:
                                             class_adaption=self.cfg.class_adaption, 
                                             template_adaption=self.cfg.template_adaption)
 
+        # Pre-compute text features for KFS
+        with torch.no_grad():
+             tokenized_text = clip.tokenize([text_prompt]).to(self.device)
+             text_features = self.clip_model.encode_text(tokenized_text).float()
+             text_features /= text_features.norm(dim=-1, keepdim=True)
+
         # Iterate chunks
         chunk_indices = range(0, total_frames, clip_length)
         total_chunks = len(chunk_indices)
@@ -217,7 +238,7 @@ class CVADDetector:
                    callback({"progress": progress, "message": f"Processing chunk {chunk_idx+1}/{total_chunks}... (Selecting Keyframe)"})
 
                 # self.kfs.call_function now handles list of images
-                indice = self.kfs.call_function(cp, text_prompt)
+                indice = self.kfs.call_function(cp, text_prompt, text_features=text_features)
                 
                 # Indices in 'indice' tuple are relative to the chunk 'cp'
                 key_image = cp[indice[0]]
@@ -254,7 +275,8 @@ class CVADDetector:
                     # Save key image permanently for this request
                     # Since we don't have a path, we save the PIL image
                     dest_path = os.path.join(kf_dir, kf_filename)
-                    key_image.save(dest_path)
+                    future = self.save_executor.submit(key_image.save, dest_path)
+                    future.add_done_callback(self._log_save_error)
                     kf_path_for_ui = f"/keyframes/{request_id}/{kf_filename}"
                     
                     if score_tc > 0.6:
@@ -322,6 +344,12 @@ class CVADDetector:
 
         # General prompt for KFS and Description
         kfs_prompt = "important object or event"
+
+        # Pre-compute text features for KFS
+        with torch.no_grad():
+             tokenized_text = clip.tokenize([kfs_prompt]).to(self.device)
+             text_features = self.clip_model.encode_text(tokenized_text).float()
+             text_features /= text_features.norm(dim=-1, keepdim=True)
         
         # Instruction for description
         desc_instruction = make_instruction(self.cfg, "Describe this visual scene in detail.", False)[0]
@@ -340,7 +368,7 @@ class CVADDetector:
 
             try:
                 # KFS Selection - Use a generic prompt to find the most "interesting" frame
-                indice = self.kfs.call_function(cp, kfs_prompt)
+                indice = self.kfs.call_function(cp, kfs_prompt, text_features=text_features)
                 key_image = cp[indice[0]]
                 
                 # Run Inference to get description
@@ -355,7 +383,8 @@ class CVADDetector:
                 if request_id:
                     kf_filename = f"summary_{chunk_idx}.jpg"
                     dest_path = os.path.join(kf_dir, kf_filename)
-                    key_image.save(dest_path)
+                    future = self.save_executor.submit(key_image.save, dest_path)
+                    future.add_done_callback(self._log_save_error)
 
                     storyline.append({
                         "chunk_index": chunk_idx,
