@@ -11,7 +11,7 @@ def extract_numbers(file_name):
     return tuple(map(int, numbers))
 
 
-def key_frame_selection(clip_data, anomaly_text, model, preprocess, device):
+def key_frame_selection(clip_data, anomaly_text, model, preprocess, device, text_features=None):
     # clip_data can be paths or images
     if isinstance(clip_data[0], str):
         images = [preprocess(Image.open(img_path)).unsqueeze(0).to(device) for img_path in clip_data]
@@ -19,14 +19,16 @@ def key_frame_selection(clip_data, anomaly_text, model, preprocess, device):
         images = [preprocess(img).unsqueeze(0).to(device) for img in clip_data]
         
     images = torch.cat(images)
-    texts = clip.tokenize([anomaly_text for _ in range(1)]).to(device)
 
     with torch.no_grad():
         image_features = model.encode_image(images).float()
-        text_features = model.encode_text(texts).float()
-
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        text_features /= text_features.norm(dim=-1, keepdim=True)
+
+        if text_features is None:
+            texts = clip.tokenize([anomaly_text for _ in range(1)]).to(device)
+            text_features = model.encode_text(texts).float()
+            text_features /= text_features.norm(dim=-1, keepdim=True)
+
         similarity = (text_features @ image_features.T).cpu().numpy() # (1, clip_length)
 
         # key frame selection
@@ -35,21 +37,23 @@ def key_frame_selection(clip_data, anomaly_text, model, preprocess, device):
     return max_idx
 
 
-def key_frame_selection_four_idx(clip_length, clip_data, anomaly_text, model, preprocess, device):
+def key_frame_selection_four_idx(clip_length, clip_data, anomaly_text, model, preprocess, device, text_features=None):
     if isinstance(clip_data[0], str):
         images = [preprocess(Image.open(img_path)).unsqueeze(0).to(device) for img_path in clip_data]
     else:
         images = [preprocess(img).unsqueeze(0).to(device) for img in clip_data]
         
     images = torch.cat(images)
-    texts = clip.tokenize([anomaly_text for _ in range(1)]).to(device)
 
     with torch.no_grad():
         image_features = model.encode_image(images).float()
-        text_features = model.encode_text(texts).float()
-
         image_features /= image_features.norm(dim=-1, keepdim=True)
-        text_features /= text_features.norm(dim=-1, keepdim=True)
+
+        if text_features is None:
+            texts = clip.tokenize([anomaly_text for _ in range(1)]).to(device)
+            text_features = model.encode_text(texts).float()
+            text_features /= text_features.norm(dim=-1, keepdim=True)
+
         similarity = (text_features @ image_features.T).cpu().numpy() # (1, clip_length)
 
         # key frames selection
@@ -75,15 +79,15 @@ class KFS:
         self.device = device
 
 
-    def call_function(self, clip_data, anomaly_text):
+    def call_function(self, clip_data, anomaly_text, text_features=None):
         if self.select_num == 1:
             return self.key_frame_selection_random()
         elif self.select_num == 2:
-            return self.key_frame_selection_clip(clip_data, anomaly_text)
+            return self.key_frame_selection_clip(clip_data, anomaly_text, text_features)
         elif self.select_num == 3:
-            return self.key_frame_selection_grouping_clip(clip_data, anomaly_text)
+            return self.key_frame_selection_grouping_clip(clip_data, anomaly_text, text_features)
         else:
-            return self.key_frame_selection_clip_grouping(clip_data, anomaly_text)
+            return self.key_frame_selection_clip_grouping(clip_data, anomaly_text, text_features)
         
 
     def key_frame_selection_random(self):
@@ -96,21 +100,23 @@ class KFS:
         return max_idx, first_idx, second_idx, third_idx, fourth_idx
 
 
-    def key_frame_selection_clip(self, clip_data, anomaly_text):
+    def key_frame_selection_clip(self, clip_data, anomaly_text, text_features=None):
         if isinstance(clip_data[0], str):
             images = [self.preprocess(Image.open(img_path)).unsqueeze(0).to(self.device) for img_path in clip_data]
         else:
             images = [self.preprocess(img).unsqueeze(0).to(self.device) for img in clip_data]
             
         images = torch.cat(images)
-        texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
-            text_features = self.model.encode_text(texts).float()
-
             image_features /= image_features.norm(dim=-1, keepdim=True)
-            text_features /= text_features.norm(dim=-1, keepdim=True)
+
+            if text_features is None:
+                texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
+                text_features = self.model.encode_text(texts).float()
+                text_features /= text_features.norm(dim=-1, keepdim=True)
+
             similarity = (text_features @ image_features.T).cpu().numpy() # (1, clip_length)
 
             # key frames selection
@@ -125,21 +131,23 @@ class KFS:
         return max_idx, first_idx, second_idx, third_idx, fourth_idx
 
 
-    def key_frame_selection_grouping_clip(self, clip_data, anomaly_text):
+    def key_frame_selection_grouping_clip(self, clip_data, anomaly_text, text_features=None):
         if isinstance(clip_data[0], str):
             images = [self.preprocess(Image.open(img_path)).unsqueeze(0).to(self.device) for img_path in clip_data]
         else:
             images = [self.preprocess(img).unsqueeze(0).to(self.device) for img in clip_data]
             
         images = torch.cat(images)
-        texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
-            text_features = self.model.encode_text(texts).float()
-
             image_features /= image_features.norm(dim=-1, keepdim=True)
-            text_features /= text_features.norm(dim=-1, keepdim=True)
+
+            if text_features is None:
+                texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
+                text_features = self.model.encode_text(texts).float()
+                text_features /= text_features.norm(dim=-1, keepdim=True)
+
             similarity = (text_features @ image_features.T).cpu().numpy() # (1, clip_length)
 
             # key frames selection
@@ -158,21 +166,23 @@ class KFS:
         return max_idx, first_idx, second_idx, third_idx, fourth_idx
 
 
-    def key_frame_selection_clip_grouping(self, clip_data, anomaly_text):
+    def key_frame_selection_clip_grouping(self, clip_data, anomaly_text, text_features=None):
         if isinstance(clip_data[0], str):
             images = [self.preprocess(Image.open(img_path)).unsqueeze(0).to(self.device) for img_path in clip_data]
         else:
             images = [self.preprocess(img).unsqueeze(0).to(self.device) for img in clip_data]
             
         images = torch.cat(images)
-        texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
-            text_features = self.model.encode_text(texts).float()
-
             image_features /= image_features.norm(dim=-1, keepdim=True)
-            text_features /= text_features.norm(dim=-1, keepdim=True)
+
+            if text_features is None:
+                texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
+                text_features = self.model.encode_text(texts).float()
+                text_features /= text_features.norm(dim=-1, keepdim=True)
+
             similarity = (text_features @ image_features.T).cpu().numpy() # (1, clip_length)
 
             # key frames selection
