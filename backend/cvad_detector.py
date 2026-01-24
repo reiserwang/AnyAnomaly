@@ -209,7 +209,6 @@ class CVADDetector:
         instruction, instruction_tc = make_instruction(self.cfg, text_prompt, True)
         
         text_embedding = make_text_embedding(self.clip_model, self.device, text=text_prompt, 
-                                            type_list=[text_prompt], # Hack to match expected list
                                             class_adaption=self.cfg.class_adaption, 
                                             template_adaption=self.cfg.template_adaption)
 
