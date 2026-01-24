@@ -14,11 +14,11 @@ def extract_numbers(file_name):
 def key_frame_selection(clip_data, anomaly_text, model, preprocess, device):
     # clip_data can be paths or images
     if isinstance(clip_data[0], str):
-        images = [preprocess(Image.open(img_path)).unsqueeze(0).to(device) for img_path in clip_data]
+        images = [preprocess(Image.open(img_path)) for img_path in clip_data]
     else:
-        images = [preprocess(img).unsqueeze(0).to(device) for img in clip_data]
+        images = [preprocess(img) for img in clip_data]
         
-    images = torch.cat(images)
+    images = torch.stack(images).to(device)
     texts = clip.tokenize([anomaly_text for _ in range(1)]).to(device)
 
     with torch.no_grad():
@@ -37,11 +37,11 @@ def key_frame_selection(clip_data, anomaly_text, model, preprocess, device):
 
 def key_frame_selection_four_idx(clip_length, clip_data, anomaly_text, model, preprocess, device):
     if isinstance(clip_data[0], str):
-        images = [preprocess(Image.open(img_path)).unsqueeze(0).to(device) for img_path in clip_data]
+        images = [preprocess(Image.open(img_path)) for img_path in clip_data]
     else:
-        images = [preprocess(img).unsqueeze(0).to(device) for img in clip_data]
+        images = [preprocess(img) for img in clip_data]
         
-    images = torch.cat(images)
+    images = torch.stack(images).to(device)
     texts = clip.tokenize([anomaly_text for _ in range(1)]).to(device)
 
     with torch.no_grad():
@@ -98,11 +98,11 @@ class KFS:
 
     def key_frame_selection_clip(self, clip_data, anomaly_text):
         if isinstance(clip_data[0], str):
-            images = [self.preprocess(Image.open(img_path)).unsqueeze(0).to(self.device) for img_path in clip_data]
+            images = [self.preprocess(Image.open(img_path)) for img_path in clip_data]
         else:
-            images = [self.preprocess(img).unsqueeze(0).to(self.device) for img in clip_data]
+            images = [self.preprocess(img) for img in clip_data]
             
-        images = torch.cat(images)
+        images = torch.stack(images).to(self.device)
         texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
@@ -127,11 +127,11 @@ class KFS:
 
     def key_frame_selection_grouping_clip(self, clip_data, anomaly_text):
         if isinstance(clip_data[0], str):
-            images = [self.preprocess(Image.open(img_path)).unsqueeze(0).to(self.device) for img_path in clip_data]
+            images = [self.preprocess(Image.open(img_path)) for img_path in clip_data]
         else:
-            images = [self.preprocess(img).unsqueeze(0).to(self.device) for img in clip_data]
+            images = [self.preprocess(img) for img in clip_data]
             
-        images = torch.cat(images)
+        images = torch.stack(images).to(self.device)
         texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
@@ -160,11 +160,11 @@ class KFS:
 
     def key_frame_selection_clip_grouping(self, clip_data, anomaly_text):
         if isinstance(clip_data[0], str):
-            images = [self.preprocess(Image.open(img_path)).unsqueeze(0).to(self.device) for img_path in clip_data]
+            images = [self.preprocess(Image.open(img_path)) for img_path in clip_data]
         else:
-            images = [self.preprocess(img).unsqueeze(0).to(self.device) for img in clip_data]
+            images = [self.preprocess(img) for img in clip_data]
             
-        images = torch.cat(images)
+        images = torch.stack(images).to(self.device)
         texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
