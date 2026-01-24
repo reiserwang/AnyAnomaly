@@ -86,22 +86,8 @@ def analyze_video():
     request_id = str(uuid.uuid4())
     
     if youtube_url:
-        try:
-            import yt_dlp
-            # Create a temporary file path
-            temp_name = f"yt_{os.urandom(8).hex()}"
-            ydl_opts = {
-                'format': 'best[ext=mp4]/best',
-                'outtmpl': os.path.join(UPLOAD_FOLDER, f"{temp_name}.%(ext)s"),
-                'noplaylist': True,
-                'quiet': True,
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(youtube_url, download=True)
-                filename = ydl.prepare_filename(info)
-                filepath = filename
-        except Exception as e:
-             return jsonify({'error': f"Failed to download YouTube video: {str(e)}"}), 500
+        # Will be downloaded in worker thread
+        pass
 
     elif file and file.filename != '':
         if allowed_file(file.filename):
@@ -128,10 +114,37 @@ def analyze_video():
 
     def worker():
         try:
+            target_filepath = filepath
+
             def callback(data):
                 # Synchronize server console
                 # logging.info(f"[PROGRESS] {data.get('progress', 0)}%: {data.get('message', '')}")
                 msg_queue.put({"type": "progress", "data": data})
+
+            if youtube_url:
+                try:
+                    import yt_dlp
+                    callback({"progress": 0, "message": "Downloading video from YouTube..."})
+                    # Create a temporary file path
+                    temp_name = f"yt_{os.urandom(8).hex()}"
+                    ydl_opts = {
+                        'format': 'best[ext=mp4]/best',
+                        'outtmpl': os.path.join(UPLOAD_FOLDER, f"{temp_name}.%(ext)s"),
+                        'noplaylist': True,
+                        'quiet': True,
+                    }
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(youtube_url, download=True)
+                        filename = ydl.prepare_filename(info)
+                        target_filepath = filename
+                    callback({"progress": 5, "message": "Download complete. Starting analysis..."})
+                except Exception as e:
+                    msg_queue.put({"type": "error", "message": f"Failed to download YouTube video: {str(e)}"})
+                    return
+
+            if not target_filepath:
+                msg_queue.put({"type": "error", "message": "No valid video file to process"})
+                return
 
             # Use captured variables
             final_frame_interval = frame_interval_arg
@@ -143,14 +156,14 @@ def analyze_video():
             
             if mode_arg == 'summarize':
                  if final_frame_interval > 0:
-                     results = detector.summarize(filepath, callback=callback, request_id=request_id, frame_interval=final_frame_interval, fast_mode=fast_mode_arg)
+                     results = detector.summarize(target_filepath, callback=callback, request_id=request_id, frame_interval=final_frame_interval, fast_mode=fast_mode_arg)
                  else:
-                     results = detector.summarize(filepath, callback=callback, request_id=request_id, fast_mode=fast_mode_arg)
+                     results = detector.summarize(target_filepath, callback=callback, request_id=request_id, fast_mode=fast_mode_arg)
             else:
                  if final_frame_interval > 0:
-                      results = detector.detect(filepath, text_prompt, callback=callback, request_id=request_id, frame_interval=final_frame_interval, fast_mode=fast_mode_arg)
+                      results = detector.detect(target_filepath, text_prompt, callback=callback, request_id=request_id, frame_interval=final_frame_interval, fast_mode=fast_mode_arg)
                  else:
-                      results = detector.detect(filepath, text_prompt, callback=callback, request_id=request_id, fast_mode=fast_mode_arg)
+                      results = detector.detect(target_filepath, text_prompt, callback=callback, request_id=request_id, fast_mode=fast_mode_arg)
             
             # Send final results
             msg_queue.put({
@@ -161,7 +174,7 @@ def analyze_video():
                     'results': results['scores'],
                     'storyline': results['storyline'],
                     'summary': results.get('summary', ''),
-                    'filename': os.path.basename(filepath)
+                    'filename': os.path.basename(target_filepath)
                 }
             })
         except Exception as e:
