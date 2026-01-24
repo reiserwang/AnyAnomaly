@@ -213,6 +213,12 @@ class CVADDetector:
                                             class_adaption=self.cfg.class_adaption, 
                                             template_adaption=self.cfg.template_adaption)
 
+        # Pre-compute text features for KFS
+        with torch.no_grad():
+             tokenized_text = clip.tokenize([text_prompt]).to(self.device)
+             text_features = self.clip_model.encode_text(tokenized_text).float()
+             text_features /= text_features.norm(dim=-1, keepdim=True)
+
         # Iterate chunks
         chunk_indices = range(0, total_frames, clip_length)
         total_chunks = len(chunk_indices)
@@ -233,7 +239,7 @@ class CVADDetector:
                    callback({"progress": progress, "message": f"Processing chunk {chunk_idx+1}/{total_chunks}... (Selecting Keyframe)"})
 
                 # self.kfs.call_function now handles list of images
-                indice = self.kfs.call_function(cp, text_prompt)
+                indice = self.kfs.call_function(cp, text_prompt, text_features=text_features)
                 
                 # Indices in 'indice' tuple are relative to the chunk 'cp'
                 key_image = cp[indice[0]]
@@ -339,6 +345,12 @@ class CVADDetector:
 
         # General prompt for KFS and Description
         kfs_prompt = "important object or event"
+
+        # Pre-compute text features for KFS
+        with torch.no_grad():
+             tokenized_text = clip.tokenize([kfs_prompt]).to(self.device)
+             text_features = self.clip_model.encode_text(tokenized_text).float()
+             text_features /= text_features.norm(dim=-1, keepdim=True)
         
         # Instruction for description
         desc_instruction = make_instruction(self.cfg, "Describe this visual scene in detail.", False)[0]
@@ -357,7 +369,7 @@ class CVADDetector:
 
             try:
                 # KFS Selection - Use a generic prompt to find the most "interesting" frame
-                indice = self.kfs.call_function(cp, kfs_prompt)
+                indice = self.kfs.call_function(cp, kfs_prompt, text_features=text_features)
                 key_image = cp[indice[0]]
                 
                 # Run Inference to get description
