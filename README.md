@@ -88,20 +88,6 @@ npm install
 
 ## 🏃‍♂️ Usage
 
-### Start the Backend (Windows)
-We recommend using the provided PowerShell script for reliable startup:
-
-```powershell
-# In the root directory
-.\start_backend.ps1
-```
-
-You can customize the startup behavior by editing the script or setting environment variables before running:
-
-```powershell
-$env:MODEL_PRECISION = "int4" # Switch to 4-bit quantized model
-.\start_backend.ps1
-```
 
 ### Start the Backend (Linux/Mac)
 The backend runs on port `5001`.
@@ -144,6 +130,32 @@ npm run dev
 3. Enter a text prompt (e.g., "person falling", "fire", "car crash").
 4. Click **Analyze**.
 5. View the score timeline and extracted keyframes.
+
+### CLI Mode (Console)
+You can run the anomaly detection directly from the command line without the web interface.
+
+```bash
+# Basic usage
+python backend/cli.py input_video.mp4 --keywords "fighting,running"
+
+# With INT4 quantization (for Mac with <16GB RAM)
+python backend/cli.py input_video.mp4 --keywords "fighting,running" --quantize
+
+# Save details to JSON
+python backend/cli.py input_video.mp4 --keywords "fire" --output json --save-results
+
+# Video Summarization
+python backend/cli.py input_video.mp4 --mode summarize --save-results
+```
+
+**Arguments:**
+- `video_path`: Path to the input video file.
+- `--mode`: `detect` (default) or `summarize`.
+- `--keywords`: Comma-separated list of anomalies (Required for `detect` mode).
+- `--quantize`: Enable 4-bit quantization (recommended for MPS/Mac).
+- `--output`: Output format, `text` (default) or `json`.
+- `--save-results`: Save the analysis results to a JSON file.
+
 
 ## 🔧 Configuration
 

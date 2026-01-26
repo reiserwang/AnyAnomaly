@@ -105,8 +105,6 @@ class CVADDetector:
             self.tokenizer, self.model = load_lvlm(self.cfg.model_path, self.device)
             
             # Explicitly cast to device/dtype if load_lvlm doesn't handle it fully for our custom wrapper
-            if self.device.type == 'mps':
-                 pass
                  
         except Exception as e:
             logging.error(f"Error loading LVLM: {e}")
