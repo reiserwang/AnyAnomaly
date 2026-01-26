@@ -225,9 +225,15 @@ class CVADDetector:
         for chunk_idx, i in enumerate(chunk_indices):
             # cp is list of PIL images
             cp = frames[i:i+clip_length]
-            if len(cp) < clip_length:
+            actual_len = len(cp)
+            if actual_len == 0:
                 break
-                
+            
+            # Pad if last chunk is smaller than clip_length
+            if actual_len < clip_length:
+                last_frame = cp[-1]
+                padding = [last_frame] * (clip_length - actual_len)
+                cp.extend(padding)
             progress = 10 + int((chunk_idx / total_chunks) * 80)
             if callback:
                 callback({"progress": progress, "message": f"Processing chunk {chunk_idx+1}/{total_chunks}..."})
@@ -263,7 +269,8 @@ class CVADDetector:
                 score_tc = generate_output(response_tc)['score']
                 
                 # Assign score to local chunk
-                for _ in range(clip_length):
+                # Assign score to local chunk
+                for _ in range(actual_len):
                      chunk_scores.append(score_tc)
                      
                 # Save keyframe for storyline
@@ -359,8 +366,15 @@ class CVADDetector:
 
         for chunk_idx, i in enumerate(chunk_indices):
             cp = frames[i:i+clip_length]
-            if len(cp) < clip_length:
+            actual_len = len(cp)
+            if actual_len == 0:
                 break
+            
+            # Pad if last chunk is smaller than clip_length
+            if actual_len < clip_length:
+                last_frame = cp[-1]
+                padding = [last_frame] * (clip_length - actual_len)
+                cp.extend(padding)
                 
             progress = 10 + int((chunk_idx / total_chunks) * 80)
             if callback:
