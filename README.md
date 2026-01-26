@@ -4,7 +4,7 @@
 
 The system provides a visual timeline of events, Key Frame Selection (KFS), and explainable scoring, making complex video analysis accessible and intuitive.
 
-![AnyAnomaly UI Mockup](https://via.placeholder.com/800x450?text=AnyAnomaly+Interface)
+![AnyAnomaly UI Mockup](asset/AnyAnomaly_UI.png)
 
 ## ✨ Features
 
