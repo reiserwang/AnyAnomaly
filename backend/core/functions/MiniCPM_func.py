@@ -125,41 +125,75 @@ def parse_bbox(response_text):
 
 def load_lvlm(model_path, device):
     # Determine precision and repo name
-    # Supported values: 'bf16', 'int4'
-    precision = os.environ.get('MODEL_PRECISION', 'bf16').lower()
+    # Prioritize passed model_path, then environment variable
+    env_precision = os.environ.get('MODEL_PRECISION', '').lower()
     
-    if precision == 'int4':
+    if 'int4' in model_path.lower() or env_precision == 'int4':
         repo_name = 'openbmb/MiniCPM-V-2_6-int4'
         dtype = torch.float16 # Compute dtype for INT4
         logging.info("Configuration: Using INT4 quantized model.")
-    elif precision == 'bf16':
-        repo_name = 'openbmb/MiniCPM-V-2_6'
-        dtype = torch.bfloat16 if device.type == 'cuda' else torch.float32
-        logging.info(f"Configuration: Using BF16 model on {device.type}.")
+    elif 'mini' in model_path.lower(): # Check if standard model path checking
+         repo_name = 'openbmb/MiniCPM-V-2_6'
+         dtype = torch.bfloat16 if device.type == 'cuda' or device.type == 'mps' else torch.float32
+         logging.info(f"Configuration: Using BF16 model on {device.type}.")
     else:
-        # Fallback for other values
-        repo_name = 'openbmb/MiniCPM-V-2_6'
-        dtype = torch.float32
-        logging.info(f"Configuration: Precision '{precision}' not recognized. Falling back to FP32.")
+        # Fallback based on env only if model_path is not specific
+        if env_precision == 'int4':
+             repo_name = 'openbmb/MiniCPM-V-2_6-int4'
+             dtype = torch.float16
+        else:
+             repo_name = 'openbmb/MiniCPM-V-2_6'
+             dtype = torch.bfloat16 if device.type == 'cuda' or device.type == 'mps' else torch.float32
+             logging.info(f"Configuration: Using BF16 (Env/Default) on {device.type}.")
 
     logging.info(f"Loading model from {repo_name} with trust_remote_code=True on {device}")
     
     # Load model
-    model = AutoModel.from_pretrained(
-        repo_name, 
-        trust_remote_code=True, 
-        attn_implementation='sdpa', 
-        torch_dtype=dtype,
-        device_map=device.type if device.type == 'cuda' else None # Better for CUDA
-    )
+    logging.info("DEBUG: Calling AutoModel.from_pretrained with low_cpu_mem_usage=True...")
     
-    tokenizer = AutoTokenizer.from_pretrained(repo_name, trust_remote_code=True)
-    
-    # Explicit .to(device) for non-device_map scenarios
-    if not hasattr(model, 'hf_device_map') or model.device.type != device.type:
-        model = model.to(device=device)
+    # Determine device_map to use accelerate's optimization
+    # For MPS, 'auto' or explicit device can help with low_cpu_mem_usage
+    if device.type == 'cuda':
+        d_map = device.type
+    elif device.type == 'mps':
+        d_map = 'auto' # Accelerate supports MPS
+    else:
+        d_map = None
+
+    try:
+        model = AutoModel.from_pretrained(
+            repo_name, 
+            trust_remote_code=True, 
+            attn_implementation='sdpa', 
+            torch_dtype=dtype,
+            device_map=d_map,
+            low_cpu_mem_usage=True 
+        )
+    except Exception as e:
+        logging.warning(f"Failed to load with device_map={d_map}: {e}. Falling back to default.")
+        model = AutoModel.from_pretrained(
+            repo_name, 
+            trust_remote_code=True, 
+            attn_implementation='sdpa', 
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True # Still try this
+        )
         
+    logging.info("DEBUG: AutoModel.from_pretrained returned.")
+    
+    logging.info("DEBUG: Calling AutoTokenizer.from_pretrained...")
+    tokenizer = AutoTokenizer.from_pretrained(repo_name, trust_remote_code=True)
+    logging.info("DEBUG: AutoTokenizer.from_pretrained returned.")
+    
+    # Explicit .to(device) if needed (if device_map didn't put it there)
+    if not hasattr(model, 'hf_device_map') and model.device.type != device.type:
+        logging.info(f"DEBUG: Moving model to device {device}...")
+        model = model.to(device=device)
+        logging.info(f"DEBUG: Model moved to {device}.")
+        
+    logging.info("DEBUG: Setting model to eval mode...")
     model = model.eval()
+    logging.info("DEBUG: Model set to eval.")
     return tokenizer, model
 
 

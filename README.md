@@ -9,6 +9,9 @@ The system provides a visual timeline of events, Key Frame Selection (KFS), and 
 ## ✨ Features
 
 - **Natural Language Detection**: Detect arbitrary anomalies using open-ended text prompts.
+    - **Supported Categories** (Standard): `fighting`, `running`, `throwing`, `falling`, `loitering`, `jumping`, `skateboarding`, `too_close`.
+    - **Objects**: `car`, `bicycle`, `motorcycle`, `hand_truck`.
+    - *Note: You are not limited to this list. The system uses a VLM and can detect almost any visual concept.*
 - **Multimodal Understanding**: built on MiniCPM-V 2.6 for strong OCR and action recognition.
 - **Visual Storyline**: Extracts and displays keyframes relevant to your query.
 - **Precise Timeline**: Interactive graph showing anomaly scores over time.
@@ -112,6 +115,20 @@ python app.py
 ```
 
 *The first run will download the MiniCPM-V model (~15.5GB for BF16, ~8GB for INT4). Ensure you have a stable internet connection.*
+
+**Expected Output:**
+When the backend starts successfully, you should see logs similar to this (timestamps will vary):
+```text
+2026-01-26 11:04:27,098 - INFO - Initializing C-VAD Detector (this may take a while)...
+2026-01-26 11:04:27,098 - INFO - Configuration: DEVICE=auto, QUANTIZE=False, FRAME_INTERVAL=1
+2026-01-26 11:04:27,151 - INFO - Using device: mps
+2026-01-26 11:04:27,151 - INFO - Loading LVLM: MiniCPM-V-2_6...
+2026-01-26 11:04:27,151 - INFO - Configuration: Using BF16 model on mps.
+2026-01-26 11:04:27,151 - INFO - Loading model from openbmb/MiniCPM-V-2_6 with trust_remote_code=True on mps
+`torch_dtype` is deprecated! Use `dtype` instead!
+2026-01-26 11:04:27,753 - INFO - vision_config is None, using default vision config
+Loading checkpoint shards:   0%|                                                     | 0/4 [00:08<?, ?it/s]
+```
 
 ### Start the Frontend
 The frontend runs on `http://localhost:5173`.

@@ -106,7 +106,7 @@ class CVADDetector:
             
             # Explicitly cast to device/dtype if load_lvlm doesn't handle it fully for our custom wrapper
             if self.device.type == 'mps':
-                 self.model = self.model.to(device=self.device, dtype=dtype)
+                 pass
                  
         except Exception as e:
             logging.error(f"Error loading LVLM: {e}")

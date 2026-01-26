@@ -58,9 +58,11 @@ try:
     
     detector = CVADDetector(device=device, quantize=quantize_model, frame_interval=frame_interval, frame_resize_dim=frame_resize_dim)
     logging.info("C-VAD Detector Initialized.")
+    initialization_error = None
 except Exception as e:
     logging.error(f"Failed to initialize detector: {e}")
     detector = None
+    initialization_error = str(e)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -69,7 +71,8 @@ def allowed_file(filename):
 @app.route('/analyze', methods=['POST'])
 def analyze_video():
     if not detector:
-        return jsonify({'error': 'Detector not initialized'}), 500
+        error_msg = f"Detector not initialized. Error: {initialization_error}" if initialization_error else "Detector not initialized"
+        return jsonify({'error': error_msg}), 500
 
     file = request.files.get('video')
     text_prompt = request.form.get('prompt', '')
@@ -197,7 +200,13 @@ def analyze_video():
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'running', 'detector_loaded': detector is not None})
+    status = {
+        'status': 'running' if detector else 'error',
+        'detector_loaded': detector is not None
+    }
+    if initialization_error:
+        status['error'] = initialization_error
+    return jsonify(status)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
