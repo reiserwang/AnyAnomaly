@@ -19,7 +19,6 @@ def key_frame_selection(clip_data, anomaly_text, model, preprocess, device, text
         images = [preprocess(img) for img in clip_data]
         
     images = torch.stack(images).to(device)
-    texts = clip.tokenize([anomaly_text for _ in range(1)]).to(device)
 
     with torch.no_grad():
         image_features = model.encode_image(images).float()
@@ -45,7 +44,6 @@ def key_frame_selection_four_idx(clip_length, clip_data, anomaly_text, model, pr
         images = [preprocess(img) for img in clip_data]
         
     images = torch.stack(images).to(device)
-    texts = clip.tokenize([anomaly_text for _ in range(1)]).to(device)
 
     with torch.no_grad():
         image_features = model.encode_image(images).float()
@@ -109,7 +107,6 @@ class KFS:
             images = [self.preprocess(img) for img in clip_data]
             
         images = torch.stack(images).to(self.device)
-        texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
@@ -141,7 +138,6 @@ class KFS:
             images = [self.preprocess(img) for img in clip_data]
             
         images = torch.stack(images).to(self.device)
-        texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
@@ -177,7 +173,6 @@ class KFS:
             images = [self.preprocess(img) for img in clip_data]
             
         images = torch.stack(images).to(self.device)
-        texts = clip.tokenize([anomaly_text for _ in range(1)]).to(self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
