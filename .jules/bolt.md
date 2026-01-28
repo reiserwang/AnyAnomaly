@@ -5,3 +5,7 @@
 ## 2024-05-23 - OpenCV Resizing Performance
 **Learning:** `cv2.resize` with `cv2.INTER_AREA` is significantly slower (~23x) than `cv2.INTER_LINEAR`. While `INTER_AREA` is better for downsampling quality (anti-aliasing), the performance cost is massive for real-time or high-throughput applications.
 **Action:** Evaluate the trade-off between quality and speed for resizing. For performance-critical paths, consider `INTER_LINEAR` if slight aliasing is acceptable.
+
+## 2024-05-24 - Redundant Tokenization in Loop
+**Learning:** `clip.tokenize()` is CPU-bound and expensive. In loops (like video chunk processing), pre-computing text features once and reusing them saves significant time compared to re-tokenizing and encoding every iteration.
+**Action:** Always check if constant text inputs in loops can be pre-encoded outside the loop.
