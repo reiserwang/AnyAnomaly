@@ -14,6 +14,7 @@ from functions.attn_func import winclip_attention
 from functions.grid_func import grid_generation
 from functions.text_func import make_text_embedding
 from functions.key_func import KFS
+from functions.fast_ops import FastCLIPPreprocess
 from config import update_config # We might need to mock args
 
 class CVADDetector:
@@ -116,7 +117,9 @@ class CVADDetector:
         self.clip_model, self.preprocess = clip.load('ViT-B/32', device=self.device)
         
         # Initialize KFS (Key Frame Selection)
-        self.kfs = KFS(self.cfg.kfs_num, self.cfg.clip_length, self.clip_model, self.preprocess, self.device)
+        # Use fast preprocessing (CV2 Linear) instead of standard CLIP (PIL Bicubic) for KFS
+        fast_pp = FastCLIPPreprocess(size=224, device=self.device)
+        self.kfs = KFS(self.cfg.kfs_num, self.cfg.clip_length, self.clip_model, fast_pp, self.device)
 
         # Async executor for saving images
         self.save_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
