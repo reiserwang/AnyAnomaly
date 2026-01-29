@@ -6,7 +6,7 @@ The system provides a visual timeline of events, Key Frame Selection (KFS), and 
 
 ![AnyAnomaly UI Mockup](asset/AnyAnomaly_UI.png)
 
-## ✨ Features
+## Features
 
 - **Natural Language Detection**: Detect arbitrary anomalies using open-ended text prompts.
     - **Supported Categories** (Standard): `fighting`, `running`, `throwing`, `falling`, `loitering`, `jumping`, `skateboarding`, `too_close`.
@@ -15,10 +15,10 @@ The system provides a visual timeline of events, Key Frame Selection (KFS), and 
 - **Multimodal Understanding**: built on MiniCPM-V 2.6 for strong OCR and action recognition.
 - **Visual Storyline**: Extracts and displays keyframes relevant to your query.
 - **Precise Timeline**: Interactive graph showing anomaly scores over time.
-- **YouTube Support**: Analyze videos directly from YouTube URLs.
+- ~~**YouTube Support**: Analyze videos directly from YouTube URLs.~~
 - **Edge Optimized**: Configurable for running on consumer hardware (Mac M-series, consumer GPUs) via int4 quantization.
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -37,13 +37,13 @@ graph TD
     end
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Backend**: Python, Flask, PyTorch, Transformers, CLIP, OpenCV.
 - **Frontend**: React, Vite, Tailwind CSS v4, Recharts.
 - **AI Core**: MiniCPM-V 2.6 (AutoGPTQ/BitsAndBytes support planned).
 
-## 🚀 Prerequisites
+## Prerequisites
 
 - **Python 3.10+**
 - **Node.js 18+**
@@ -51,7 +51,7 @@ graph TD
 - **Hugging Face Account**: You need an Access Token with permission to access gated models (like MiniCPM-V).
 - **FFmpeg**: Required for video processing (usually installed via system package manager).
 
-## 📦 Installation
+##  Installation
 
 ### 1. Clone the Repository
 ```bash
@@ -86,7 +86,7 @@ cd ../frontend
 npm install
 ```
 
-## 🏃‍♂️ Usage
+##  Usage
 
 
 ### Start the Backend (Linux/Mac)
@@ -157,7 +157,7 @@ python backend/cli.py input_video.mp4 --mode summarize --save-results
 - `--save-results`: Save the analysis results to a JSON file.
 
 
-## 🔧 Configuration
+## Configuration
 
 You can customize the backend behavior via environment variables:
 
@@ -171,12 +171,7 @@ You can customize the backend behavior via environment variables:
 - **`UV_CACHE_DIR`**: Directory for `uv` package cache.
 - **`FRAME_INTERVAL`**: (Upcoming) Process every Nth frame to speed up analysis.
 
-## ⚠️ Troubleshooting
 
-- **Port 5000 in use**: We use port 5001 by default because MacOS AirPlay Receiver claims port 5000.
-- **403 Forbidden (Hugging Face)**: Ensure you have accepted the terms for `openbmb/MiniCPM-V-2_6` on the Hugging Face website and exported your `HF_TOKEN`.
-- **MPS Out of Memory**: If running on a Mac with <32GB RAM, try closing other applications or wait for the int4 quantization update.
+## License
 
-## 📜 License
-
-MIT License. See `LICENSE` for details.
+MIT
