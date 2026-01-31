@@ -109,9 +109,26 @@ class CVADDetector:
                  
         except Exception as e:
             logging.error(f"Error loading LVLM: {e}")
-            logging.warning("Fallback: Attempting to load CPU/Float32 or base model if quantization failed.")
-             # Fallback logic could go here
-            raise e
+
+            # Check for INT4 on MPS failure scenario
+            if self.device.type == 'mps' and 'int4' in self.cfg.model_path.lower():
+                logging.warning("Fallback: INT4 quantization likely failed on MPS. Attempting to load non-quantized model (Float16/BFloat16).")
+                try:
+                    # Remove 'int4' from model path to revert to base model
+                    # e.g., 'MiniCPM-V-2_6-int4' -> 'MiniCPM-V-2_6'
+                    new_path = self.cfg.model_path.replace('-int4', '').replace('int4', '')
+                    if new_path == self.cfg.model_path:
+                         new_path = 'MiniCPM-V-2_6' # Default fallback if replace failed
+
+                    self.cfg.model_path = new_path
+                    logging.info(f"Fallback Loading LVLM: {self.cfg.model_path}...")
+                    self.tokenizer, self.model = load_lvlm(self.cfg.model_path, self.device)
+                except Exception as fallback_e:
+                    logging.error(f"Fallback loading also failed: {fallback_e}")
+                    raise e
+            else:
+                logging.warning("Fallback: Attempting to load CPU/Float32 or base model if quantization failed.")
+                raise e
 
         logging.info("Loading CLIP...")
         self.clip_model, _ = clip.load('ViT-B/32', device=self.device)
