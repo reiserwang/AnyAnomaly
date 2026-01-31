@@ -11,14 +11,22 @@ def extract_numbers(file_name):
     return tuple(map(int, numbers))
 
 
-def key_frame_selection(clip_data, anomaly_text, model, preprocess, device, text_features=None):
-    # clip_data can be paths or images
+def prepare_images(clip_data, preprocess, device):
+    """
+    Preprocesses and stacks images.
+    Optimization: Stacks tensors on CPU before moving to GPU to avoid N+1 synchronization overhead.
+    """
     if isinstance(clip_data[0], str):
         images = [preprocess(Image.open(img_path)) for img_path in clip_data]
     else:
         images = [preprocess(img) for img in clip_data]
         
-    images = torch.stack(images).to(device)
+    return torch.stack(images).to(device)
+
+
+def key_frame_selection(clip_data, anomaly_text, model, preprocess, device, text_features=None):
+    # clip_data can be paths or images
+    images = prepare_images(clip_data, preprocess, device)
 
     with torch.no_grad():
         image_features = model.encode_image(images).float()
@@ -38,12 +46,7 @@ def key_frame_selection(clip_data, anomaly_text, model, preprocess, device, text
 
 
 def key_frame_selection_four_idx(clip_length, clip_data, anomaly_text, model, preprocess, device, text_features=None):
-    if isinstance(clip_data[0], str):
-        images = [preprocess(Image.open(img_path)) for img_path in clip_data]
-    else:
-        images = [preprocess(img) for img in clip_data]
-        
-    images = torch.stack(images).to(device)
+    images = prepare_images(clip_data, preprocess, device)
 
     with torch.no_grad():
         image_features = model.encode_image(images).float()
@@ -101,12 +104,7 @@ class KFS:
 
 
     def key_frame_selection_clip(self, clip_data, anomaly_text, text_features=None):
-        if isinstance(clip_data[0], str):
-            images = [self.preprocess(Image.open(img_path)) for img_path in clip_data]
-        else:
-            images = [self.preprocess(img) for img in clip_data]
-            
-        images = torch.stack(images).to(self.device)
+        images = prepare_images(clip_data, self.preprocess, self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
@@ -132,12 +130,7 @@ class KFS:
 
 
     def key_frame_selection_grouping_clip(self, clip_data, anomaly_text, text_features=None):
-        if isinstance(clip_data[0], str):
-            images = [self.preprocess(Image.open(img_path)) for img_path in clip_data]
-        else:
-            images = [self.preprocess(img) for img in clip_data]
-            
-        images = torch.stack(images).to(self.device)
+        images = prepare_images(clip_data, self.preprocess, self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
@@ -167,12 +160,7 @@ class KFS:
 
 
     def key_frame_selection_clip_grouping(self, clip_data, anomaly_text, text_features=None):
-        if isinstance(clip_data[0], str):
-            images = [self.preprocess(Image.open(img_path)) for img_path in clip_data]
-        else:
-            images = [self.preprocess(img) for img in clip_data]
-            
-        images = torch.stack(images).to(self.device)
+        images = prepare_images(clip_data, self.preprocess, self.device)
 
         with torch.no_grad():
             image_features = self.model.encode_image(images).float()
