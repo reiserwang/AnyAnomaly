@@ -261,7 +261,7 @@ class CVADDetector:
                 else:
                     # Standard mode: Full attention + grid pipeline
                     wa_image = winclip_attention(self.cfg, key_image, text_embedding, self.clip_model, self.device, self.cfg.class_adaption, 0)
-                    grid_image = grid_generation(self.cfg, image_list, text_prompt, self.clip_model, self.device)
+                    grid_image = grid_generation(self.cfg, image_list, text_prompt, self.clip_model, self.device, text_features=text_features)
                     response_tc = lvlm_test(self.tokenizer, self.model, instruction_tc, None, grid_image)
                 
                 # Parse Score

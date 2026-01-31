@@ -36,24 +36,42 @@ def split_images_with_unfold(image_inputs, kernel_size=(80, 80), stride_size=Non
     return grouped_patches
 
 
-def patch_selection(gpatches, text, model, device):
-    texts = clip.tokenize([text for _ in range(1)]).to(device)
-    
+def patch_selection(gpatches, text, model, device, text_features=None):
     with torch.no_grad():
-        text_features = model.encode_text(texts).float()
-        max_arr = []
-
-        for gpatch in gpatches:
-            gpatch = gpatch.to(device)
-            image_features = model.encode_image(gpatch).float()
-            image_features /= image_features.norm(dim=-1, keepdim=True)
+        if text_features is None:
+            texts = clip.tokenize([text for _ in range(1)]).to(device)
+            text_features = model.encode_text(texts).float()
             text_features /= text_features.norm(dim=-1, keepdim=True)
-            similarity = (text_features @ image_features.T).cpu().numpy() # (1, clip_length)
-            max_arr.append(np.max(similarity))
+        else:
+            text_features = text_features.float()
+            text_features /= text_features.norm(dim=-1, keepdim=True)
 
-        # key frames selection
-        max_arr = np.array(max_arr)
-        max_idx = np.argmax(max_arr)
+        if not gpatches:
+            return 0
+
+        # Optimization: Batch process all patches at once to reduce GPU kernel launches
+        # gpatches is a list of tensors, each shape (B, 3, 224, 224)
+        B = gpatches[0].shape[0]
+        N = len(gpatches)
+
+        # Stack all patches into one large batch: (N*B, 3, 224, 224)
+        all_patches = torch.cat(gpatches, dim=0).to(device)
+
+        image_features = model.encode_image(all_patches).float()
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+
+        # Calculate similarity: (1, D) @ (D, N*B) -> (1, N*B)
+        similarity = (text_features @ image_features.T)
+
+        # Reshape to (N, B) to separate groups
+        similarity = similarity.view(N, B)
+
+        # Find max similarity in each group
+        max_vals, _ = similarity.max(dim=1)
+
+        # Find the group with the highest max similarity
+        max_idx = torch.argmax(max_vals).item()
+
     return max_idx
 
 
@@ -67,7 +85,7 @@ def grid_image_generation(gpatches, idx):
     return grid_image
 
 
-def grid_generation(cfg, image_inputs, keyword, clip_model, device):
+def grid_generation(cfg, image_inputs, keyword, clip_model, device, text_features=None):
     gpatches = []
         
     if cfg.sml_scale:
@@ -82,7 +100,7 @@ def grid_generation(cfg, image_inputs, keyword, clip_model, device):
         gpatches_lge = split_images_with_unfold(image_inputs, kernel_size=cfg.lge_size, stride_size=cfg.lge_size_stride) 
         gpatches += [gpatch for gpatch in gpatches_lge]
 
-    max_patch_idx = patch_selection(gpatches, keyword, clip_model, device)
+    max_patch_idx = patch_selection(gpatches, keyword, clip_model, device, text_features=text_features)
     grid_image = grid_image_generation(gpatches, max_patch_idx)
     output_image = transform2pil(grid_image)
     return output_image
