@@ -6,7 +6,7 @@ import cv2
 from utils import transform2pil
 
 
-def split_one_image_with_unfold(image_input, kernel_size=(80, 80), stride_size=None):
+def preprocess_image_for_unfold(image_input):
     if isinstance(image_input, str):
         image = cv2.imread(image_input)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype('float32') # BGR -> RGB
@@ -18,7 +18,15 @@ def split_one_image_with_unfold(image_input, kernel_size=(80, 80), stride_size=N
     image = cv2.resize(image, (240, 240))
     image = (image / 255)
     image = torch.tensor(image).permute(2, 0, 1).unsqueeze(0).float()  # (H, W, C) -> (C, H, W) -> (1, C, H, W)
-    
+    return image
+
+
+def split_one_image_with_unfold(image_input, kernel_size=(80, 80), stride_size=None):
+    if isinstance(image_input, torch.Tensor):
+        image = image_input
+    else:
+        image = preprocess_image_for_unfold(image_input)
+
     if stride_size == None:
         stride_size = kernel_size
 
@@ -76,18 +84,20 @@ def total_fusion(data1, data2, data3):
 def winclip_attention(cfg, img_input, text_embedding, clip_model, device, class_adaption=False, type_id=None):
     usim_sml = usim_mid = usim_lge = None
 
+    tensor_input = preprocess_image_for_unfold(img_input)
+
     if cfg.sml_scale:
-        patches_sml = split_one_image_with_unfold(img_input, kernel_size=cfg.sml_size, stride_size=cfg.sml_size_stride) 
+        patches_sml = split_one_image_with_unfold(tensor_input, kernel_size=cfg.sml_size, stride_size=cfg.sml_size_stride)
         sim_sml = patch_similarity(patches_sml, text_embedding, clip_model, device, class_adaption, type_id).view(1, 1, cfg.sml_patch_num[0], cfg.sml_patch_num[1])
         usim_sml = F.interpolate(sim_sml, size=(224, 224), mode='bilinear').squeeze(0)
 
     if cfg.mid_scale:
-        patches_mid = split_one_image_with_unfold(img_input, kernel_size=cfg.mid_size, stride_size=cfg.mid_size_stride) 
+        patches_mid = split_one_image_with_unfold(tensor_input, kernel_size=cfg.mid_size, stride_size=cfg.mid_size_stride)
         sim_mid = patch_similarity(patches_mid, text_embedding, clip_model, device, class_adaption, type_id).view(1, 1, cfg.mid_patch_num[0], cfg.mid_patch_num[1])
         usim_mid = F.interpolate(sim_mid, size=(224, 224), mode='bilinear').squeeze(0)
 
     if cfg.lge_scale:
-        patches_lge = split_one_image_with_unfold(img_input, kernel_size=cfg.lge_size, stride_size=cfg.lge_size_stride) 
+        patches_lge = split_one_image_with_unfold(tensor_input, kernel_size=cfg.lge_size, stride_size=cfg.lge_size_stride)
         sim_lge = patch_similarity(patches_lge, text_embedding, clip_model, device, class_adaption, type_id).view(1, 1, cfg.lge_patch_num[0], cfg.lge_patch_num[1])
         usim_lge = F.interpolate(sim_lge, size=(224, 224), mode='bilinear').squeeze(0)
 
