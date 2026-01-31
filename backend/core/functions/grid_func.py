@@ -41,15 +41,28 @@ def patch_selection(gpatches, text, model, device):
     
     with torch.no_grad():
         text_features = model.encode_text(texts).float()
-        max_arr = []
+        text_features /= text_features.norm(dim=-1, keepdim=True)
 
-        for gpatch in gpatches:
-            gpatch = gpatch.to(device)
-            image_features = model.encode_image(gpatch).float()
-            image_features /= image_features.norm(dim=-1, keepdim=True)
-            text_features /= text_features.norm(dim=-1, keepdim=True)
-            similarity = (text_features @ image_features.T).cpu().numpy() # (1, clip_length)
-            max_arr.append(np.max(similarity))
+        # Batch optimization: process all patches in a single pass
+        # gpatches is a list of tensors. We track batch sizes to handle variable sizes correctly.
+        batch_sizes = [gp.shape[0] for gp in gpatches]
+
+        all_patches = torch.cat(gpatches, dim=0).to(device)
+        image_features = model.encode_image(all_patches).float()
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+
+        # similarity shape: (1, total_patches)
+        similarity = (text_features @ image_features.T).cpu().numpy()
+
+        # Split similarity back to groups
+        max_arr = []
+        current_idx = 0
+        similarity_flat = similarity[0]
+
+        for b_size in batch_sizes:
+            group_sim = similarity_flat[current_idx : current_idx + b_size]
+            max_arr.append(np.max(group_sim))
+            current_idx += b_size
 
         # key frames selection
         max_arr = np.array(max_arr)
