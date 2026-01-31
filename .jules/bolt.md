@@ -9,3 +9,7 @@
 ## 2024-05-24 - Redundant Tokenization in Loop
 **Learning:** `clip.tokenize()` is CPU-bound and expensive. In loops (like video chunk processing), pre-computing text features once and reusing them saves significant time compared to re-tokenizing and encoding every iteration.
 **Action:** Always check if constant text inputs in loops can be pre-encoded outside the loop.
+
+## 2024-05-24 - GPU Kernel Launch Overhead in Loops
+**Learning:** Iterating over a list of small tensors and calling `model.encode_image` (or similar GPU ops) individually incurs massive kernel launch overhead and CPU-GPU synchronization costs.
+**Action:** Batch small tensors using `torch.cat` or `torch.stack` into a single large tensor and perform the operation once. This can yield dramatic speedups even if the total FLOPs count is the same.
