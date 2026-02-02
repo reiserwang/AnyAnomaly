@@ -1,0 +1,44 @@
+[
+  {
+    "type": "progress",
+    "data": {
+      "progress": 5,
+      "message": "Video loaded. 192 frames extracted."
+    }
+  },
+  {
+    "type": "progress",
+    "data": {
+      "progress": 10,
+      "message": "Frames prepared. Starting model inference..."
+    }
+  },
+  {
+    "type": "progress",
+    "data": {
+      "progress": 10,
+      "message": "Processing chunk 1/8..."
+    }
+  },
+  {
+    "type": "progress",
+    "data": {
+      "progress": 10,
+      "message": "Processing chunk 1/8... (Selecting Keyframe)"
+    }
+  },
+  {
+    "type": "progress",
+    "data": {
+      "progress": 10,
+      "message": "Processing chunk 1/8... (Running Inference)"
+    }
+  },
+  {
+    "type": "progress",
+    "data": {
+      "progress": 10,
+      "message": "Error in chunk 0: Cannot copy out of meta tensor; no data!"
+    }
+  }
+]

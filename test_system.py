@@ -34,10 +34,11 @@ def wait_for_detector(timeout=600):
     print("\nTimeout waiting for detector.")
     return False
 
+
 def run_test():
     if not os.path.exists(VIDEO_PATH):
         print(f"Error: {VIDEO_PATH} not found.")
-        return
+        return False
 
     print(f"\nrunning analysis on {VIDEO_PATH}...")
     try:
@@ -50,13 +51,11 @@ def run_test():
             
             if response.status_code != 200:
                 print(f"Analysis failed: {response.status_code}")
-                # print(response.text)
-                # Try to print JSON error if possible
                 try: 
                     print(response.json()) 
                 except: 
                     print(response.text)
-                return
+                return False
 
             print("Analysis started. Streaming results...\n")
             
@@ -65,13 +64,31 @@ def run_test():
             output_file = os.path.join(output_dir, f"result_{int(time.time())}.json")
             
             full_response = []
+            has_error = False
             
             for line in response.iter_lines():
                 if line:
                     decoded_line = line.decode('utf-8')
                     print(decoded_line)
                     try:
-                        full_response.append(json.loads(decoded_line))
+                        json_line = json.loads(decoded_line)
+                        full_response.append(json_line)
+                        
+                        # Check for errors in the stream
+                        if json_line.get('type') == 'error':
+                            has_error = True
+                            print("Error detected in response stream.")
+                            break
+                        
+                        # Check for error messages in progress updates
+                        if json_line.get('type') == 'progress':
+                            data_content = json_line.get('data', {})
+                            message = data_content.get('message', '')
+                            if 'error' in message.lower():
+                                has_error = True
+                                print(f"Error detected in progress: {message}")
+                                break
+
                     except json.JSONDecodeError:
                         pass
             
@@ -79,11 +96,21 @@ def run_test():
                 json.dump(full_response, f, indent=2)
             print(f"\nResults saved to {output_file}")
 
+            if has_error:
+                print("Test failed due to errors in response.")
+                return False
+            
+            return True
+
     except Exception as e:
         print(f"Test execution failed: {e}")
+        return False
 
 if __name__ == "__main__":
     if wait_for_detector():
-        run_test()
+        if run_test():
+            sys.exit(0)
+        else:
+            sys.exit(1)
     else:
         sys.exit(1)

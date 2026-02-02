@@ -185,6 +185,11 @@ All three experimental branches encountered a critical `RuntimeError: Cannot cop
 
 **Current Recommendation**: Use the stable `main` branch. Do not merge these experimental PRs until the tensor offloading issues are resolved.
 
+If you encounter `RuntimeError: Cannot copy out of meta tensor` on Mac, please run with `INFERENCE_DEVICE=cpu` as a temporary workaround:
+```bash
+INFERENCE_DEVICE=cpu python app.py
+```
+
 ## ⚠️ Troubleshooting
 
 
