@@ -171,11 +171,23 @@ You can customize the backend behavior via environment variables:
 - **`UV_CACHE_DIR`**: Directory for `uv` package cache.
 - **`FRAME_INTERVAL`**: (Upcoming) Process every Nth frame to speed up analysis.
 
+## 🧪 Experimental Optimizations (Status: On Hold)
+
+We recently attempted to integrate several performance optimizations ("Bolt" series) to improve inference speed on consumer hardware. These are currently **on hold** due to compatibility issues with the MPS (Mac) backend.
+
+### Attempted Features
+- **PR #12: Optimize CLIP Preprocessing**: Attempted to streamline image preprocessing for the CLIP encoder.
+- **PR #18: Optimize Grid Pattern**: Proposed a more efficient grid slicing strategy for high-res image analysis.
+- **PR #19: Pre-compute CLIP**: Tried to cache/pre-compute CLIP embeddings to reduce redundant computation.
+
+### Known Issues
+All three experimental branches encountered a critical `RuntimeError: Cannot copy out of meta tensor; no data!` when running on Apple Silicon (MPS). This indicates a regression in tensor device placement or compatibility with the current `MiniCPM-V-2_6` implementation on this architecture.
+
+**Current Recommendation**: Use the stable `main` branch. Do not merge these experimental PRs until the tensor offloading issues are resolved.
+
 ## ⚠️ Troubleshooting
 
-- **Port 5000 in use**: We use port 5001 by default because MacOS AirPlay Receiver claims port 5000.
-- **403 Forbidden (Hugging Face)**: Ensure you have accepted the terms for `openbmb/MiniCPM-V-2_6` on the Hugging Face website and exported your `HF_TOKEN`.
-- **MPS Out of Memory**: If running on a Mac with <32GB RAM, try closing other applications or wait for the int4 quantization update.
+
 
 ## 📜 License
 
