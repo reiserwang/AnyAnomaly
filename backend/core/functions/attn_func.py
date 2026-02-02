@@ -41,7 +41,7 @@ def patch_similarity(patches, text_embedding, model, device, class_adaption=Fals
         patches = patches.to(device)
         image_embedding = model.encode_image(patches).float()
         image_embedding /= image_embedding.norm(dim=-1, keepdim=True)
-        text_embedding /= text_embedding.norm(dim=-1, keepdim=True)
+        text_embedding = text_embedding / text_embedding.norm(dim=-1, keepdim=True)
         similarity = (text_embedding @ image_embedding.T).cpu() # (1, patch_length) or (class_length, patch_length)
 
     if class_adaption:
