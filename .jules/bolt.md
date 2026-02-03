@@ -9,3 +9,7 @@
 ## 2024-05-24 - Redundant Tokenization in Loop
 **Learning:** `clip.tokenize()` is CPU-bound and expensive. In loops (like video chunk processing), pre-computing text features once and reusing them saves significant time compared to re-tokenizing and encoding every iteration.
 **Action:** Always check if constant text inputs in loops can be pre-encoded outside the loop.
+
+## 2024-05-24 - Pre-computing Embeddings in Video Loops
+**Learning:** In VAD pipelines where the same text prompts (keywords) are used for every video clip, pre-computing CLIP text embeddings outside the loop avoids redundant tokenization and encoding. This is critical because `clip.tokenize` and `encode_text` are CPU-bound and slow when called thousands of times.
+**Action:** Identify static text inputs in processing loops and move their embedding computation to the initialization phase.
