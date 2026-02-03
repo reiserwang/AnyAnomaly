@@ -75,6 +75,24 @@ def main():
         clip_model, preprocess = clip.load('ViT-B/32', device=device)
         kfs = KFS(cfg.kfs_num, cfg.clip_length, clip_model, preprocess, device)
 
+        # Optimization: Pre-compute text features for all keywords
+        precomputed_features = {}
+        for keyword in keyword_list:
+            # Complex text embedding for winclip_attention
+            text_embedding = make_text_embedding(clip_model, device, text=keyword, type_list=cfg.type_list,
+                                                  class_adaption=cfg.class_adaption, template_adaption=cfg.template_adaption)
+
+            # Simple text features for KFS and grid_generation
+            texts = clip.tokenize([keyword for _ in range(1)]).to(device)
+            with torch.no_grad():
+                simple_text_features = clip_model.encode_text(texts).float()
+                simple_text_features /= simple_text_features.norm(dim=-1, keepdim=True)
+
+            precomputed_features[keyword] = {
+                'text_embedding': text_embedding,
+                'simple_text_features': simple_text_features
+            }
+
         dict_arr = []
         print_check = True
 
@@ -96,15 +114,17 @@ def main():
                         instruction, instruction_tc = make_instruction(cfg, keyword, True)
                         print_check = print_prompt(print_check, instruction, instruction_tc)
 
-                        text_embedding = make_text_embedding(clip_model, device, text=keyword, type_list=cfg.type_list,
-                                                              class_adaption=cfg.class_adaption, template_adaption=cfg.template_adaption)
+                        # Retrieve precomputed features
+                        features = precomputed_features[keyword]
+                        text_embedding = features['text_embedding']
+                        simple_text_features = features['simple_text_features']
 
-                        indice = kfs.call_function(cp, keyword)
+                        indice = kfs.call_function(cp, keyword, text_features=simple_text_features)
                         key_image_path = cp[indice[0]]
                         image_paths = [cp[idx] for idx in indice[1:]]          
 
                         wa_image = winclip_attention(cfg, key_image_path, text_embedding, clip_model, device, cfg.class_adaption, cfg.type_ids[k_i])
-                        grid_image = grid_generation(cfg, image_paths, keyword, clip_model, device)
+                        grid_image = grid_generation(cfg, image_paths, keyword, clip_model, device, text_features=simple_text_features)
 
                         response = lvlm_test(tokenizer, model, image_processor, instruction, key_image_path, None)
                         response_wa = lvlm_test(tokenizer, model, image_processor, instruction, None, wa_image)
