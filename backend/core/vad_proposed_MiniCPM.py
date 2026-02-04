@@ -75,6 +75,15 @@ def main():
         clip_model, preprocess = clip.load('ViT-B/32', device=device)
         kfs = KFS(cfg.kfs_num, cfg.clip_length, clip_model, preprocess, device)
 
+        # Pre-compute KFS text features to avoid redundant tokenization in the loop
+        kfs_text_features = {}
+        with torch.no_grad():
+            for keyword in keyword_list:
+                texts = clip.tokenize([keyword]).to(device)
+                features = clip_model.encode_text(texts).float()
+                features /= features.norm(dim=-1, keepdim=True)
+                kfs_text_features[keyword] = features
+
         dict_arr = []
         print_check = True
 
@@ -99,12 +108,12 @@ def main():
                         text_embedding = make_text_embedding(clip_model, device, text=keyword, type_list=cfg.type_list,
                                                               class_adaption=cfg.class_adaption, template_adaption=cfg.template_adaption)
 
-                        indice = kfs.call_function(cp, keyword)
+                        indice = kfs.call_function(cp, keyword, text_features=kfs_text_features[keyword])
                         key_image_path = cp[indice[0]]
                         image_paths = [cp[idx] for idx in indice[1:]]          
 
                         wa_image = winclip_attention(cfg, key_image_path, text_embedding, clip_model, device, cfg.class_adaption, cfg.type_ids[k_i])
-                        grid_image = grid_generation(cfg, image_paths, keyword, clip_model, device)
+                        grid_image = grid_generation(cfg, image_paths, keyword, clip_model, device, text_features=kfs_text_features[keyword])
 
                         response = lvlm_test(tokenizer, model, instruction, key_image_path, None)
                         response_wa = lvlm_test(tokenizer, model, instruction, None, wa_image)
