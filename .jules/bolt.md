@@ -9,3 +9,7 @@
 ## 2024-05-24 - Redundant Tokenization in Loop
 **Learning:** `clip.tokenize()` is CPU-bound and expensive. In loops (like video chunk processing), pre-computing text features once and reusing them saves significant time compared to re-tokenizing and encoding every iteration.
 **Action:** Always check if constant text inputs in loops can be pre-encoded outside the loop.
+
+## 2024-05-24 - Deep Function Call Optimization
+**Learning:** Optimizing top-level loops is not enough if deep helper functions (like `grid_generation` -> `patch_selection`) re-initialize expensive resources (like `clip.tokenize`) internally. Use optional arguments to pass pre-computed resources down the stack.
+**Action:** Audit deep helper functions called in loops to ensure they accept and use pre-computed resources.
