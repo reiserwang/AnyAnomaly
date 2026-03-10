@@ -36,12 +36,12 @@ def split_images_with_unfold(image_inputs, kernel_size=(80, 80), stride_size=Non
     return grouped_patches
 
 
-def patch_selection(gpatches, text, model, device):
-    texts = clip.tokenize([text for _ in range(1)]).to(device)
-    
+def patch_selection(gpatches, text, model, device, text_features=None):
     with torch.no_grad():
-        text_features = model.encode_text(texts).float()
-        text_features /= text_features.norm(dim=-1, keepdim=True)
+        if text_features is None:
+            texts = clip.tokenize([text for _ in range(1)]).to(device)
+            text_features = model.encode_text(texts).float()
+            text_features /= text_features.norm(dim=-1, keepdim=True)
 
         # Batch optimization: process all patches in a single pass
         # gpatches is a list of tensors. We track batch sizes to handle variable sizes correctly.
@@ -80,7 +80,7 @@ def grid_image_generation(gpatches, idx):
     return grid_image
 
 
-def grid_generation(cfg, image_inputs, keyword, clip_model, device):
+def grid_generation(cfg, image_inputs, keyword, clip_model, device, text_features=None):
     gpatches = []
         
     if cfg.sml_scale:
@@ -95,7 +95,7 @@ def grid_generation(cfg, image_inputs, keyword, clip_model, device):
         gpatches_lge = split_images_with_unfold(image_inputs, kernel_size=cfg.lge_size, stride_size=cfg.lge_size_stride) 
         gpatches += [gpatch for gpatch in gpatches_lge]
 
-    max_patch_idx = patch_selection(gpatches, keyword, clip_model, device)
+    max_patch_idx = patch_selection(gpatches, keyword, clip_model, device, text_features=text_features)
     grid_image = grid_image_generation(gpatches, max_patch_idx)
     output_image = transform2pil(grid_image)
     return output_image
