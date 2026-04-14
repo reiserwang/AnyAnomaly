@@ -75,6 +75,19 @@ def main():
         clip_model, preprocess = clip.load('ViT-B/32', device=device)
         kfs = KFS(cfg.kfs_num, cfg.clip_length, clip_model, preprocess, device)
 
+        # Precompute instructions and text embeddings
+        precomputed_keywords = []
+        for keyword in keyword_list:
+            instruction, instruction_tc = make_instruction(cfg, keyword, True)
+            text_embedding = make_text_embedding(clip_model, device, text=keyword, type_list=cfg.type_list,
+                                                  class_adaption=cfg.class_adaption, template_adaption=cfg.template_adaption)
+            precomputed_keywords.append({
+                'keyword': keyword,
+                'instruction': instruction,
+                'instruction_tc': instruction_tc,
+                'text_embedding': text_embedding
+            })
+
         dict_arr = []
         print_check = True
 
@@ -92,12 +105,13 @@ def main():
                     max_score_wa = 0 
                     max_score_tc = 0 
 
-                    for k_i, keyword in enumerate(keyword_list):
-                        instruction, instruction_tc = make_instruction(cfg, keyword, True)
-                        print_check = print_prompt(print_check, instruction, instruction_tc)
+                    for k_i, precomputed in enumerate(precomputed_keywords):
+                        keyword = precomputed['keyword']
+                        instruction = precomputed['instruction']
+                        instruction_tc = precomputed['instruction_tc']
+                        text_embedding = precomputed['text_embedding']
 
-                        text_embedding = make_text_embedding(clip_model, device, text=keyword, type_list=cfg.type_list,
-                                                              class_adaption=cfg.class_adaption, template_adaption=cfg.template_adaption)
+                        print_check = print_prompt(print_check, instruction, instruction_tc)
 
                         indice = kfs.call_function(cp, keyword)
                         key_image_path = cp[indice[0]]
