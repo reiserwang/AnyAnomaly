@@ -26,3 +26,7 @@ frontend/node_modules/
 # Misc
 coverage/
 .DS_Store
+
+# Analysis artifacts
+results/
+.pytest_cache/

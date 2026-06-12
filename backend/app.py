@@ -1,14 +1,15 @@
 import os
 import sys
 import json
+import uuid
+import queue
+import threading
 import torch
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-import tempfile
-from flask import send_from_directory
 
 # Ensure backend/core is in path to import modules from Paper-AnyAnomaly
 sys.path.append(os.path.join(os.path.dirname(__file__), 'core'))
@@ -27,20 +28,26 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-CORS(app)
+
+# Restrict CORS to the frontend origin; override via ALLOWED_ORIGIN env var
+_allowed_origin = os.environ.get('ALLOWED_ORIGIN', 'http://localhost:5173')
+CORS(app, origins=[_allowed_origin])
 
 # Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv'}
+MAX_UPLOAD_MB = int(os.environ.get('MAX_UPLOAD_MB', 200))
+app.config['MAX_CONTENT_LENGTH'] = MAX_UPLOAD_MB * 1024 * 1024
 
 # Initialize Detector (Global Load)
 try:
     logging.info("Initializing C-VAD Detector (this may take a while)...")
     
     # Read optimization flags from environment
-    # Read optimization flags from environment
-    quantize_model = os.environ.get('QUANTIZE_MODEL', 'false').lower() == 'true'
+    # MODEL_PRECISION=int4 enables quantization; QUANTIZE_MODEL=true kept for back-compat
+    model_precision = os.environ.get('MODEL_PRECISION', 'bf16').lower()
+    quantize_model = model_precision == 'int4' or os.environ.get('QUANTIZE_MODEL', 'false').lower() == 'true'
     frame_interval = int(os.environ.get('FRAME_INTERVAL', 1))
     frame_resize_dim = int(os.environ.get('FRAME_RESIZE_DIM', 240))
     
@@ -85,7 +92,6 @@ def analyze_video():
     filepath = None
     
     # Generate unique request ID for this session
-    import uuid
     request_id = str(uuid.uuid4())
     
     if youtube_url:
@@ -94,7 +100,9 @@ def analyze_video():
 
     elif file and file.filename != '':
         if allowed_file(file.filename):
-            filename = secure_filename(file.filename)
+            # Prefix with request ID: avoids collisions between concurrent uploads
+            # and handles secure_filename() returning '' for non-ASCII names
+            filename = f"{request_id[:8]}_{secure_filename(file.filename)}"
             filepath = os.path.join(UPLOAD_FOLDER, filename)
             file.save(filepath)
         else:
@@ -102,10 +110,6 @@ def analyze_video():
     else:
         return jsonify({'error': 'No video file or YouTube URL provided'}), 400
 
-    from flask import Response, stream_with_context
-    import queue
-    import threading
-    
     # Queue for communicating between thread and generator
     msg_queue = queue.Queue()
     
@@ -220,4 +224,5 @@ def keyframe_file(filename):
     return send_from_directory(KEYFRAMES_DIR, filename)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=False)
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=5001, debug=debug, use_reloader=False)

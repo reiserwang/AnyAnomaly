@@ -167,9 +167,29 @@ You can customize the backend behavior via environment variables:
 - **`INFERENCE_DEVICE`**: Manually set the inference device.
     - `auto` (Default): Automatically detects CUDA > MPS > CPU.
     - `cuda`, `mps`, `cpu`: Force usage of a specific device.
+- **`ALLOWED_ORIGIN`**: CORS origin allowed to call the API. Default: `http://localhost:5173`.
+- **`MAX_UPLOAD_MB`**: Maximum video upload size in MB. Default: `200`.
+- **`FLASK_DEBUG`**: Set to `true` to enable Flask debug mode. Default: `false`. Never enable in production.
+- **`FRAME_INTERVAL`**: Process every Nth frame to speed up analysis. Default: `1`. Can also be set per-request from the UI.
 - **`HF_HOME`**: Directory to store Hugging Face model cache (e.g., `D:\huggingface`).
 - **`UV_CACHE_DIR`**: Directory for `uv` package cache.
-- **`FRAME_INTERVAL`**: (Upcoming) Process every Nth frame to speed up analysis.
+
+Copy `backend/.env.example` and `frontend/.env.example` as starting points.
+
+## 🚢 Production Deployment
+
+The built-in Flask server is for development. For production:
+
+```bash
+# Backend: run behind a WSGI server with threads (required for NDJSON streaming)
+pip install gunicorn
+gunicorn --bind 0.0.0.0:5001 --threads 4 --timeout 600 app:app
+
+# Frontend: build static assets and serve via nginx/CDN
+cd frontend && npm run build   # outputs to frontend/dist/
+```
+
+Set `ALLOWED_ORIGIN` to your frontend's public URL, and proxy `/analyze`, `/health`, `/uploads`, and `/keyframes` from your web server to the backend (the dev server does this automatically via `vite.config.js`).
 
 ## 🧪 Experimental Optimizations (Status: On Hold)
 
@@ -192,7 +212,15 @@ INFERENCE_DEVICE=cpu python app.py
 
 ## ⚠️ Troubleshooting
 
-
+| Symptom | Fix |
+|---|---|
+| `RuntimeError: Cannot copy out of meta tensor` on Mac | Run with `INFERENCE_DEVICE=cpu` (see Experimental Optimizations above). |
+| Model download fails with 401/403 | Ensure `HF_TOKEN` is set and your account has access to the gated MiniCPM-V model. |
+| Out of memory while loading the model | Use `MODEL_PRECISION=int4` (~8GB) instead of the default `bf16` (~16GB). |
+| Upload rejected with HTTP 413 | The video exceeds the upload limit. Raise `MAX_UPLOAD_MB` or trim the video. |
+| Browser shows CORS errors | Set `ALLOWED_ORIGIN` on the backend to match the URL the frontend is served from. |
+| YouTube download fails | Update yt-dlp (`uv pip install -U yt-dlp`) — YouTube changes frequently break older versions. |
+| Analysis is very slow | Increase the Frame Interval slider, or pass `fast_mode=true` to skip the grid pipeline. |
 
 ## 📜 License
 

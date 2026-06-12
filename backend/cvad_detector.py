@@ -10,9 +10,7 @@ import concurrent.futures
 
 # Imports from core (assumes sys.path is set in app.py)
 from functions.MiniCPM_func import load_lvlm, lvlm_test, make_instruction, make_bbox_instruction, parse_bbox
-from functions.attn_func import winclip_attention
 from functions.grid_func import grid_generation
-from functions.text_func import make_text_embedding
 from functions.key_func import KFS
 from functions.fast_ops import FastCLIPPreprocess
 from config import update_config # We might need to mock args
@@ -29,8 +27,6 @@ class CVADDetector:
         elif torch.cuda.is_available():
             self.device = torch.device("cuda")
         else:
-            self.device = torch.device("cpu")
-            
             self.device = torch.device("cpu")
             
         logging.info(f"Using device: {self.device}")
@@ -147,18 +143,19 @@ class CVADDetector:
         except Exception as e:
             logging.error(f"Error saving keyframe: {e}")
 
-    def process_video(self, video_path, resize_dim=None):
+    def process_video(self, video_path, resize_dim=None, frame_interval=None):
         """Extracts frames from video, respecting frame_interval."""
+        interval = frame_interval if frame_interval is not None else self.frame_interval
         cap = cv2.VideoCapture(video_path)
         fps = cap.get(cv2.CAP_PROP_FPS)
         if fps == 0 or np.isnan(fps):
             fps = 30.0 # Fallback
-            
+
         frames = []
         count = 0
         while cap.isOpened():
             # Optimization: Use grab() to skip frames without decoding
-            if count % self.frame_interval == 0:
+            if count % interval == 0:
                 ret, frame = cap.read()
                 if not ret:
                     break
@@ -189,6 +186,7 @@ class CVADDetector:
                 if not cap.grab():
                     break
             count += 1
+
             
         cap.release()
         return frames, fps
@@ -196,17 +194,16 @@ class CVADDetector:
     def detect(self, video_path, text_prompt, callback=None, request_id=None, frame_interval=None, fast_mode=False):
         """
         Runs anomaly detection on the video for the given text prompt.
-        
+
         Args:
             fast_mode: If True, skip attention/grid operations for faster inference (2-3x speedup)
         """
-        if frame_interval:
-            self.frame_interval = frame_interval
-            
+        effective_frame_interval = frame_interval if frame_interval else self.frame_interval
+
         # Optimize: Resize to inference_resize_dim (448) so we don't lose quality for MiniCPM
         # KFS/CLIP will handle downscaling to 224 internally
         target_dim = self.inference_resize_dim if self.inference_resize_dim > 0 else 448
-        frames, fps = self.process_video(video_path, resize_dim=target_dim)
+        frames, fps = self.process_video(video_path, resize_dim=target_dim, frame_interval=effective_frame_interval)
         total_frames = len(frames)
         clip_length = self.cfg.clip_length
         
@@ -224,12 +221,7 @@ class CVADDetector:
         if callback:
              callback({"progress": 10, "message": "Frames prepared. Starting model inference..."})
 
-        # Text embedding
         instruction, instruction_tc = make_instruction(self.cfg, text_prompt, True)
-        
-        text_embedding = make_text_embedding(self.clip_model, self.device, text=text_prompt, 
-                                            class_adaption=self.cfg.class_adaption, 
-                                            template_adaption=self.cfg.template_adaption)
 
         # Pre-compute text features for KFS
         with torch.no_grad():
@@ -278,16 +270,15 @@ class CVADDetector:
                     # Pass None for path, key_image for image
                     response_tc = lvlm_test(self.tokenizer, self.model, instruction_tc, None, key_image)
                 else:
-                    # Standard mode: Full attention + grid pipeline
-                    wa_image = winclip_attention(self.cfg, key_image, text_embedding, self.clip_model, self.device, self.cfg.class_adaption, 0)
+                    # Standard mode: grid pipeline
                     grid_image = grid_generation(self.cfg, image_list, text_prompt, self.clip_model, self.device, text_features=text_features)
                     response_tc = lvlm_test(self.tokenizer, self.model, instruction_tc, None, grid_image)
                 
                 # Parse Score
                 from utils import generate_output
-                score_tc = generate_output(response_tc)['score']
-                
-                # Assign score to local chunk
+                output_tc = generate_output(response_tc)
+                score_tc = output_tc['score']
+
                 # Assign score to local chunk
                 for _ in range(actual_len):
                      chunk_scores.append(score_tc)
@@ -316,10 +307,10 @@ class CVADDetector:
 
                     storyline.append({
                         "chunk_index": chunk_idx,
-                        "timestamp": ((i * self.frame_interval) / fps),
+                        "timestamp": ((i * effective_frame_interval) / fps),
                         "score": score_tc,
                         "image": kf_path_for_ui,
-                        "reason": generate_output(response_tc)['reason'],
+                        "reason": output_tc['reason'],
                         "box": bbox
                     })
 
@@ -341,16 +332,15 @@ class CVADDetector:
     def summarize(self, video_path, callback=None, request_id=None, frame_interval=None, fast_mode=False):
         """
         Summarizes the video by generating captions for keyframes.
-        
+
         Args:
             fast_mode: Reserved for future use (summarization is already optimized)
         """
-        if frame_interval:
-            self.frame_interval = frame_interval
-        
+        effective_frame_interval = frame_interval if frame_interval else self.frame_interval
+
         # Optimize: 448 for better summary, or keep 240? Summarization needs details.
         target_dim = self.inference_resize_dim if self.inference_resize_dim > 0 else 448
-        frames, fps = self.process_video(video_path, resize_dim=target_dim)
+        frames, fps = self.process_video(video_path, resize_dim=target_dim, frame_interval=effective_frame_interval)
         total_frames = len(frames)
         clip_length = self.cfg.clip_length
         
@@ -421,7 +411,7 @@ class CVADDetector:
 
                     storyline.append({
                         "chunk_index": chunk_idx,
-                        "timestamp": ((i * self.frame_interval) / fps),
+                        "timestamp": ((i * effective_frame_interval) / fps),
                         "score": 0.5, # Neutral score for summary
                         "image": f"/keyframes/{request_id}/{kf_filename}",
                         "reason": description,
