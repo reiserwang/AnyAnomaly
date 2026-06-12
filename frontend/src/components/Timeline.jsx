@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { clsx } from 'clsx';
-import { MapPin, Flag, AlertCircle } from 'lucide-react';
+import { MapPin, AlertCircle } from 'lucide-react';
 
 function Timeline({ duration, scores = [], storyline = [], onSeek, currentTime }) {
     const maxScore = Math.max(...scores, 0.1);
@@ -36,11 +36,10 @@ function Timeline({ duration, scores = [], storyline = [], onSeek, currentTime }
     }, [scores]);
 
     const getLeftPercent = (index) => (index / (scores.length - 1 || 1)) * 100;
-    const getTimestamp = (index) => (index / (scores.length - 1 || 1)) * duration;
 
     return (
         <div
-            className="relative h-32 bg-slate-950/50 rounded-lg select-none border border-slate-800 cursor-pointer group mt-8"
+            className="relative h-32 bg-void/60 select-none border border-edge cursor-pointer group mt-8"
             onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = e.clientX - rect.left;
@@ -55,7 +54,7 @@ function Timeline({ duration, scores = [], storyline = [], onSeek, currentTime }
                 return (
                     <div
                         key={`region-${i}`}
-                        className="absolute top-0 bottom-0 bg-red-900/20 border-x border-red-500/20"
+                        className="absolute top-0 bottom-0 bg-alert/10 border-x border-alert/20"
                         style={{ left: `${left}%`, width: `${width}%` }}
                     />
                 );
@@ -67,10 +66,10 @@ function Timeline({ duration, scores = [], storyline = [], onSeek, currentTime }
                     <div
                         key={i}
                         className={clsx(
-                            "flex-1 rounded-t-[1px] transition-all duration-300",
-                            score > 0.6 ? "bg-gradient-to-t from-red-600 to-red-400" :
-                                score > 0.4 ? "bg-gradient-to-t from-orange-600 to-orange-400" :
-                                    "bg-slate-700"
+                            "flex-1 transition-all duration-300",
+                            score > 0.6 ? "bg-gradient-to-t from-alert to-rose-400" :
+                                score > 0.4 ? "bg-gradient-to-t from-amber-600 to-amber-400" :
+                                    "bg-edge"
                         )}
                         style={{ height: `${(score / maxScore) * 100}%` }}
                     />
@@ -93,15 +92,15 @@ function Timeline({ duration, scores = [], storyline = [], onSeek, currentTime }
                         <MapPin
                             className={clsx(
                                 "w-4 h-4 drop-shadow-lg transition-transform hover:scale-125",
-                                scene.score > 0.6 ? "text-red-400 fill-red-900/50" : "text-emerald-400 fill-emerald-900/50"
+                                scene.score > 0.6 ? "text-alert fill-rose-900/50" : "text-ok fill-emerald-900/50"
                             )}
                         />
 
                         {/* Hover Preview Tooltip */}
                         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/pin:opacity-100 transition-opacity pointer-events-none z-50">
-                            <div className="bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-xl flex flex-col items-center w-32">
-                                <img src={`http://localhost:5001${scene.image}`} className="w-full h-16 object-cover rounded mb-1" />
-                                <span className="text-[10px] text-slate-300 font-mono">{scene.timestamp.toFixed(1)}s</span>
+                            <div className="bg-panel border border-edge p-2 shadow-xl flex flex-col items-center w-32">
+                                <img src={scene.image} className="w-full h-16 object-cover mb-1.5" />
+                                <span className="font-mono text-[10px] text-slate-400 tabular-nums">{scene.timestamp.toFixed(1)}s</span>
                             </div>
                         </div>
                     </div>
@@ -117,15 +116,15 @@ function Timeline({ duration, scores = [], storyline = [], onSeek, currentTime }
                 return (
                     <div
                         key={`peak-${i}`}
-                        className="absolute top-0 -ml-px h-full border-l border-dashed border-red-400/30 w-px pointer-events-none"
+                        className="absolute top-0 -ml-px h-full border-l border-dashed border-alert/30 w-px pointer-events-none"
                         style={{ left: `${left}%` }}
                     >
-                        <div className="absolute top-[-24px] -left-3 flex flex-col items-center group/peak pointer-events-auto">
-                            <div className="flex items-center gap-1 bg-red-500/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-lg backdrop-blur hover:bg-red-500 transition-colors">
+                        <div className="absolute top-[-24px] -left-3 flex flex-col items-center pointer-events-auto">
+                            <div className="flex items-center gap-1 bg-alert/90 text-white font-mono text-[10px] font-semibold px-1.5 py-0.5 shadow-lg backdrop-blur hover:bg-alert transition-colors">
                                 <AlertCircle className="w-3 h-3" />
                                 <span>{(peak.score * 100).toFixed(0)}%</span>
                             </div>
-                            <div className="h-2 w-px bg-red-500/50"></div>
+                            <div className="h-2 w-px bg-alert/50"></div>
                         </div>
                     </div>
                 );
@@ -138,8 +137,6 @@ function Timeline({ duration, scores = [], storyline = [], onSeek, currentTime }
             >
                 <div className="absolute top-0 -ml-1 -mt-1 w-2.5 h-2.5 bg-white rounded-full shadow" />
             </div>
-
-            {/* Hover Guide (Optional, could add later) */}
         </div>
     );
 }
